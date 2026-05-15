@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/AdminDashboard.css';
 import { useAuth } from '../context/AuthContext';
-import { User, Calendar, CheckCircle2, Mail, Loader, Phone, ShieldCheck, MapPin, X, LayoutDashboard, Users, UserCheck, Building2, Settings, LogOut, Bell, Search, PlusCircle, Link2, FileDown, Trash2, ClipboardCheck, Menu, AlertTriangle, FolderKanban, Wrench, ClipboardList, GraduationCap, Handshake, HardHat, Pin, Eye, EyeOff, Megaphone, RefreshCw } from 'lucide-react';
+import { User, Calendar, CheckCircle2, Mail, Loader, Phone, ShieldCheck, MapPin, X, LayoutDashboard, Users, UserCheck, Building2, Settings, LogOut, Bell, Search, PlusCircle, Link2, FileDown, ClipboardCheck, Menu, AlertTriangle, FolderKanban, Wrench, ClipboardList, GraduationCap, Handshake, HardHat, Pin, Eye, EyeOff, Megaphone, RefreshCw } from 'lucide-react';
 import VerificationModal from '../components/admin/VerificationModal'; 
 import AddCompanyModal from '../components/admin/AddCompanyModal';
 import AddLecturerModal from '../components/admin/AddLecturerModal';
@@ -972,20 +972,6 @@ const AdminDashboard = () => {
                               Unassign
                             </button>
                           )}
-                          <button
-                            className="btn-reject-outline"
-                            style={{fontSize:'12px', padding:'4px 10px'}}
-                            onClick={async () => {
-                              if (!window.confirm(`Delete ${s.name}? This cannot be undone.`)) return;
-                              try {
-                                await api.deleteStudent(sid);
-                                setStudents(prev => prev.filter(st => (st._id||st.id).toString() !== sid.toString()));
-                                flashMsg(`${s.name} deleted from active students.`);
-                              } catch (err) { flashMsg(err.message || 'Delete failed.', 'error'); }
-                            }}
-                          >
-                            <Trash2 size={13} /> Delete
-                          </button>
                         </div>
                       </td>
                     </tr>
