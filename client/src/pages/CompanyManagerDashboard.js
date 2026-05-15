@@ -17,26 +17,19 @@ import CompanyManagerSidebar from '../components/manager/CompanyManagerSidebar';
 import StudentSettings from '../components/student/StudentSettings';
 import PendingApprovals from '../components/industrial/PendingApprovals';
 import MyInterns        from '../components/industrial/MyInterns';
-<<<<<<< HEAD
 import TabLoadingState  from '../components/common/TabLoadingState';
-=======
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 
 const CompanyManagerDashboard = () => {
   const { user, logout, refreshUser } = useAuth();
   const [activeTab, setActiveTab]     = useState('overview');
   const [isSidebarOpen, setSidebar]   = useState(false);
-<<<<<<< HEAD
   const [tabLoading, setTabLoading]   = useState(false);
-=======
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 
   useEffect(() => { refreshUser(); }, [refreshUser]);
 
   const managerName = user?.name || 'Manager';
   const companyName = user?.companyOrg || 'Your Company';
 
-<<<<<<< HEAD
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSidebar(false);
@@ -48,8 +41,6 @@ const CompanyManagerDashboard = () => {
     ]).finally(() => setTabLoading(false));
   };
 
-=======
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
   const renderContent = () => {
     switch (activeTab) {
       case 'assignments': return <InternAssignments />;
@@ -58,11 +49,7 @@ const CompanyManagerDashboard = () => {
       case 'my-interns':  return <MyInterns />;
       case 'settings':    return <StudentSettings />;
       case 'overview':
-<<<<<<< HEAD
       default:            return <ManagerOverview onNavigate={handleTabChange} />;
-=======
-      default:            return <ManagerOverview onNavigate={setActiveTab} />;
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
     }
   };
 
@@ -72,11 +59,7 @@ const CompanyManagerDashboard = () => {
 
       <CompanyManagerSidebar
         activeTab={activeTab}
-<<<<<<< HEAD
         setActiveTab={handleTabChange}
-=======
-        setActiveTab={setActiveTab}
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
         handleLogout={logout}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setSidebar}
@@ -106,13 +89,9 @@ const CompanyManagerDashboard = () => {
             </div>
           </div>
         </header>
-<<<<<<< HEAD
         <section className="page-content">
           {tabLoading ? <TabLoadingState label="Refreshing company data" /> : renderContent()}
         </section>
-=======
-        <section className="page-content">{renderContent()}</section>
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
       </main>
     </div>
   );
@@ -545,59 +524,20 @@ const AddSupervisorModal = ({ onClose, onSuccess }) => {
   const [form, setForm] = useState({ name:'', email:'', phone:'' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-<<<<<<< HEAD
-=======
-  const [tempCreds, setTempCreds] = useState(null);
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-<<<<<<< HEAD
       await createManagerSupervisor(form);
       onSuccess();
-=======
-      const res = await createManagerSupervisor(form);
-      if (res.tempPassword) {
-        setTempCreds({ email: res.data.email, password: res.tempPassword });
-      } else {
-        onSuccess();
-      }
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
     } catch (err) {
       setError(err.message || 'Failed to create supervisor');
       setLoading(false);
     }
   };
 
-<<<<<<< HEAD
-=======
-  if (tempCreds) {
-    return (
-      <div className="modal-overlay">
-        <div className="modal-content scale-in" style={{ maxWidth:'400px', textAlign:'center' }}>
-          <div className="success-icon-circle" style={{ margin:'0 auto 16px', width:'50px', height:'50px', background:'#ecfdf5', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Check size={24} color="#10b981" />
-          </div>
-          <h3>Supervisor Created!</h3>
-          <p style={{ fontSize:'14px', color:'#64748b' }}>Please share these temporary credentials with the supervisor.</p>
-          
-          <div style={{ background:'#f8fafc', padding:'16px', borderRadius:'12px', margin:'20px 0', border:'1px solid #e2e8f0' }}>
-            <p style={{ margin:'0 0 8px', fontSize:'13px' }}><strong>Email:</strong> {tempCreds.email}</p>
-            <p style={{ margin:0, fontSize:'13px' }}><strong>Password:</strong> <span style={{ color:'#ef4444', fontWeight:700 }}>{tempCreds.password}</span></p>
-          </div>
-          
-          <button className="primary-btn" style={{ width:'140px', margin:'0 auto', display:'flex', justifyContent:'center' }} onClick={onSuccess}>
-            Done
-          </button>
-        </div>
-      </div>
-    );
-  }
-
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
   return (
     <div className="modal-overlay">
       <div className="modal-content scale-in" style={{ maxWidth:'450px' }}>

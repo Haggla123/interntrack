@@ -1,12 +1,7 @@
 import { notifyError, notifySuccess } from './toast';
-<<<<<<< HEAD
 import { API_BASE_URL } from '../config';
 
 const BASE_URL = API_BASE_URL;
-=======
-
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 
 // Read from whichever storage holds the active session token
 const getToken = () =>

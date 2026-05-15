@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
 import { Menu, MapPin, BookOpen, CheckCircle2, AlertCircle, Phone, Mail, Lock, Send } from 'lucide-react';
-=======
-import React, { useState, useEffect } from 'react';
-import { Menu, MapPin, BookOpen, CheckCircle2, AlertCircle, Phone, Mail, Lock } from 'lucide-react';
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 import { getMyLogs } from '../api';
 import * as api from '../api';
 import { avatarUrl } from '../api';
@@ -77,10 +72,7 @@ const StudentDashboard = () => {
   const [logStats, setLogStats] = useState({ completedWeeks: 0, totalWeeks: 6, totalLogs: 0 });
   const [systemTotalWeeks, setSystemTotalWeeks] = useState(6);
   const [settings, setSettings] = useState(null);
-<<<<<<< HEAD
   const [tabLoading, setTabLoading] = useState(false);
-=======
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
   const placementDetails = placement || buildPlacementFromUser(user);
   const isPlaced = isStudentPlaced(user, placementDetails);
 
@@ -152,7 +144,6 @@ const StudentDashboard = () => {
       })
       .catch(() => { });
   }, [isPlaced, systemTotalWeeks]);
-<<<<<<< HEAD
 
   const refreshStudentTabData = useCallback(async () => {
     await Promise.allSettled([
@@ -176,8 +167,6 @@ const StudentDashboard = () => {
       new Promise(resolve => setTimeout(resolve, 250)),
     ]);
   }, [isPlaced, refreshUser, systemTotalWeeks]);
-=======
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 
   const studentInfo = {
     name: user?.name || 'Student',
@@ -206,20 +195,9 @@ const StudentDashboard = () => {
   };
 
   const handleTabChange = (tab) => {
-<<<<<<< HEAD
     let nextTab = tab;
     if (isPlaced && (tab === 'placements' || tab === 'documents')) {
       nextTab = 'daily-log';
-=======
-    if (isPlaced && (tab === 'placements' || tab === 'documents')) {
-      setActiveTab('daily-log');
-      setIsSidebarOpen(false);
-      return;
-    }
-    if ((tab === 'daily-log' || tab === 'history') && !isPlaced) {
-      setActiveTab('placements');
-      return;
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
     }
     if ((tab === 'daily-log' || tab === 'history') && !isPlaced) {
       nextTab = 'placements';
@@ -250,19 +228,11 @@ const StudentDashboard = () => {
         return <StudentProfile />;
 
       case 'placements':
-<<<<<<< HEAD
         if (isPlaced) return <PostPlacementLocked tabLabel="Available Placements" onGoToLog={() => handleTabChange('daily-log')} />;
         return <AvailablePlacements onPlacementAccepted={handlePlacementAccepted} />;
 
       case 'documents':
         if (isPlaced) return <PostPlacementLocked tabLabel="Attachment Letters" onGoToLog={() => handleTabChange('daily-log')} />;
-=======
-        if (isPlaced) return <PostPlacementLocked tabLabel="Available Placements" onGoToLog={() => setActiveTab('daily-log')} />;
-        return <AvailablePlacements onPlacementAccepted={handlePlacementAccepted} />;
-
-      case 'documents':
-        if (isPlaced) return <PostPlacementLocked tabLabel="Attachment Letters" onGoToLog={() => setActiveTab('daily-log')} />;
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
         return <AttachmentLetters />;
 
       case 'final-report':
@@ -275,11 +245,7 @@ const StudentDashboard = () => {
         );
 
       case 'daily-log':
-<<<<<<< HEAD
         if (!isPlaced) return <PlacementRequired onGoToMarket={() => handleTabChange('placements')} />;
-=======
-        if (!isPlaced) return <PlacementRequired onGoToMarket={() => setActiveTab('placements')} />;
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
         return (
           <>
             {geofenceEnabled && companyLocation.lat !== 0 && companyLocation.lon !== 0 && (
@@ -298,11 +264,7 @@ const StudentDashboard = () => {
         );
 
       case 'history':
-<<<<<<< HEAD
         if (!isPlaced) return <PlacementRequired onGoToMarket={() => handleTabChange('placements')} />;
-=======
-        if (!isPlaced) return <PlacementRequired onGoToMarket={() => setActiveTab('placements')} />;
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
         return <LogbookHistory />;
 
       case 'settings':
@@ -321,11 +283,7 @@ const StudentDashboard = () => {
                   : <p>You don't have a placement yet. Browse the market to get placed instantly.</p>}
                 <div className="bento-actions">
                   {isPlaced
-<<<<<<< HEAD
                     ? <button className="btn-primary-lite" onClick={() => handleTabChange('daily-log')}>Log Today's Work</button>
-=======
-                    ? <button className="btn-primary-lite" onClick={() => setActiveTab('daily-log')}>Log Today's Work</button>
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
                     : <>
                       <button className="btn-primary-lite" onClick={() => handleTabChange('placements')}>Find a Placement →</button>
                       <button className="btn-outline-lite" style={{ marginLeft: '10px' }} onClick={() => handleTabChange('documents')}>Download Letter →</button>
@@ -436,7 +394,6 @@ const StudentDashboard = () => {
                 <label>Quick Access</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                   <button
-<<<<<<< HEAD
                     className={!isPlaced ? 'text-link-btn' : 'btn-disabled-market'}
                     style={{ textAlign: 'left', fontSize: '13px', padding: '6px 0' }}
                     disabled={isPlaced}
@@ -444,21 +401,11 @@ const StudentDashboard = () => {
                   >
                     <Send size={14} style={{ display: 'inline', marginRight: '6px' }} />
                     Report Placement {isPlaced && '(already placed)'}
-=======
-                    className={isPlaced ? 'text-link-btn' : 'btn-disabled-market'}
-                    style={{ textAlign: 'left', fontSize: '13px', padding: '6px 0' }}
-                    disabled={!isPlaced}
-                    onClick={() => isPlaced && setActiveTab('daily-log')}
-                  >
-                    <BookOpen size={14} style={{ display: 'inline', marginRight: '6px' }} />
-                    Daily Log {!isPlaced && '(place first)'}
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
                   </button>
                   <button
                     className={isPlaced ? 'text-link-btn' : 'btn-disabled-market'}
                     style={{ textAlign: 'left', fontSize: '13px', padding: '6px 0' }}
                     disabled={!isPlaced}
-<<<<<<< HEAD
                     onClick={() => isPlaced && handleTabChange('daily-log')}
                   >
                     <BookOpen size={14} style={{ display: 'inline', marginRight: '6px' }} />
@@ -469,9 +416,6 @@ const StudentDashboard = () => {
                     style={{ textAlign: 'left', fontSize: '13px', padding: '6px 0' }}
                     disabled={!isPlaced}
                     onClick={() => isPlaced && handleTabChange('history')}
-=======
-                    onClick={() => isPlaced && setActiveTab('history')}
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
                   >
                     <CheckCircle2 size={14} style={{ display: 'inline', marginRight: '6px' }} />
                     Logbook History {!isPlaced && '(place first)'}

@@ -15,10 +15,7 @@ import SupervisorsTab from '../components/admin/SupervisorsTab';
 import AddAdminModal from '../components/admin/AddAdminModal';
 import AdminDocumentsTab from '../components/admin/AdminDocumentsTab';
 import AdminReportsTab from '../components/admin/AdminReportsTab';
-<<<<<<< HEAD
 import TabLoadingState from '../components/common/TabLoadingState';
-=======
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 import { usePasswordChange } from '../hooks/usePasswordChange';
 import * as api from '../api';
 
@@ -215,7 +212,6 @@ const AdminDashboard = () => {
       setLoadError(err.message || 'Failed to load dashboard. Please refresh the page.');
     } finally {
       setLoadingData(false);
-<<<<<<< HEAD
       setHasLoadedData(true);
     }
   }, []);
@@ -228,11 +224,6 @@ const AdminDashboard = () => {
     if (tab !== activeTab) refreshDashboardData();
   }, [activeTab, refreshDashboardData]);
 
-=======
-    }
-  }, []);
-
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
   useEffect(() => {
     refreshDashboardData();
   }, [refreshDashboardData]);
@@ -2170,7 +2161,3 @@ default:
 };
 
 export default AdminDashboard;
-<<<<<<< HEAD
-=======
-
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292

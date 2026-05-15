@@ -8,10 +8,7 @@ import InternEvaluation   from '../components/industrial/InternEvaluation';
 import { Clock, Calendar, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getPendingLogs, getVisits, getStudents, avatarUrl } from '../api';
-<<<<<<< HEAD
 import TabLoadingState from '../components/common/TabLoadingState';
-=======
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 import '../styles/IndustrialDashboard.css';
 
 const IndustrialDashboard = () => {

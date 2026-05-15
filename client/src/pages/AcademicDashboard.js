@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
-=======
-import React, { useState, useEffect } from 'react';
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 import { Menu } from 'lucide-react';
 import AcademicSidebar   from '../components/academic/AcademicSidebar';
 import AcademicOverview  from '../components/academic/AcademicOverview';
@@ -60,18 +56,6 @@ const AcademicDashboard = () => {
 
   const supervisorName = user?.name || 'Academic Supervisor';
   const [totalWeeks, setTotalWeeks] = useState(6);
-<<<<<<< HEAD
-=======
-
-  useEffect(() => {
-    getSettings()
-      .then(res => {
-        const data = res?.data || res || {};
-        if (data.totalWeeks) setTotalWeeks(data.totalWeeks);
-      })
-      .catch(() => {});
-  }, []);
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 
   useEffect(() => {
     getSettings()
@@ -108,7 +92,6 @@ const AcademicDashboard = () => {
 
       setStudents(arr.map(s => norm(s, statsMap)));
     } catch { /* silent */ }
-<<<<<<< HEAD
     finally { if (showLoading) setLoading(false); }
   }, [totalWeeks]);
 
@@ -132,10 +115,6 @@ const AcademicDashboard = () => {
       setVisitedIds(handledIds);
     } catch { /* silent */ }
   }, []);
-=======
-    finally { setLoading(false); }
-  };
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 
   // Load next visit and build visitedStudentIds set on mount
   useEffect(() => {
@@ -169,17 +148,7 @@ const AcademicDashboard = () => {
   };
 
   const renderContent = () => {
-<<<<<<< HEAD
     if (loading) return <TabLoadingState label="Refreshing academic data" />;
-=======
-    if (loading) return (
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', flexDirection:'column', gap:'12px', color:'#64748b' }}>
-        <div style={{ width:'32px', height:'32px', border:'3px solid #e2e8f0', borderTopColor:'#3b82f6', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-        <p style={{ fontSize:'14px' }}>Loading data…</p>
-      </div>
-    );
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 
     switch (activeTab) {
       case 'view-logbook': return <LogbookViewer student={selectedStudent} onBack={() => go('grading')} />;

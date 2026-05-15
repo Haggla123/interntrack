@@ -1,14 +1,8 @@
 import { notifyError, notifySuccess } from './utils/toast';
-<<<<<<< HEAD
 import { API_BASE_URL, SERVER_BASE_URL } from './config';
 
 const BASE_URL = API_BASE_URL;
 
-=======
-
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 // Check both storages — Login.js uses sessionStorage when
 // "Remember Me" is unchecked. The old code only read localStorage,
 // causing every API call to send no token → 401 on all requests.
@@ -67,19 +61,11 @@ export const updateProfile  = (data)         => request('PATCH', '/auth/me', dat
 // Upload avatar — sends FormData, cannot use the shared `request` helper
 export const uploadAvatar = async (file) => {
   const token = getToken();
-<<<<<<< HEAD
-=======
-  const BASE  = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
   const form  = new FormData();
   form.append('avatar', file);
   let r;
   try {
-<<<<<<< HEAD
     r = await fetch(`${BASE_URL}/auth/me/avatar`, {
-=======
-    r = await fetch(`${BASE}/auth/me/avatar`, {
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
       method:  'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body:    form,
@@ -101,12 +87,7 @@ export const uploadAvatar = async (file) => {
 export const avatarUrl = (path) => {
   if (!path) return null;
   if (path.startsWith('http')) return path;
-<<<<<<< HEAD
   return `${SERVER_BASE_URL}/uploads/${path}`;
-=======
-  const BASE = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
-  return `${BASE}/uploads/${path}`;
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 };
 
 // ── Companies ────────────────────────────────────────────────────
@@ -203,16 +184,9 @@ export const removeDepartment  = (name)     => request('DELETE', `/settings/depa
 // ── File upload helper (used by FinalReport and AdminDocumentsTab) ────────
 export const uploadFile = async (formData) => {
   const token = getToken();
-<<<<<<< HEAD
   let r;
   try {
     r = await fetch(`${BASE_URL}/documents`, {
-=======
-  const BASE  = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-  let r;
-  try {
-    r = await fetch(`${BASE}/documents`, {
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
       method:  'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body:    formData,

@@ -6,10 +6,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import ToastProvider from './components/common/ToastProvider';
-<<<<<<< HEAD
 import ErrorBoundary from './components/common/ErrorBoundary';
-=======
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
 
 import Home                from './pages/Home';
 import Login               from './Login';
@@ -56,10 +53,7 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-<<<<<<< HEAD
         <ErrorBoundary>
-=======
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
         <Router>
           <Routes>
 
@@ -110,7 +104,6 @@ function App() {
               <CompanyManagerDashboard />
             </PrivateRoute>
           } />
-<<<<<<< HEAD
 
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
@@ -118,14 +111,6 @@ function App() {
           </Routes>
         </Router>
         </ErrorBoundary>
-=======
-
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-
-          </Routes>
-        </Router>
->>>>>>> 47bb090b73335bdc567c89044beaee7541368292
       </ToastProvider>
     </AuthProvider>
   );
