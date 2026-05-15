@@ -274,7 +274,7 @@ const StudentDashboard = () => {
       default:
         return (
           <div className="bento-container fade-in">
-            <div className="bento-row main-stats">
+            <div className="bento-row main-stats student-overview-top">
               <div className="bento-item welcome-box">
                 <div className="badge-pill">Academic Year {settings?.academicYear || '2025/2026'}</div>
                 <h1>{greeting}, {studentInfo.name.split(' ')[0]}</h1>
@@ -288,6 +288,36 @@ const StudentDashboard = () => {
                       <button className="btn-primary-lite" onClick={() => handleTabChange('placements')}>Find a Placement →</button>
                       <button className="btn-outline-lite" style={{ marginLeft: '10px' }} onClick={() => handleTabChange('documents')}>Download Letter →</button>
                     </>}
+                </div>
+              </div>
+
+              <div className="bento-item info-card quick-access-card">
+                <label>Quick Access</label>
+                <div className="quick-access-actions">
+                  <button
+                    className={!isPlaced ? 'text-link-btn' : 'btn-disabled-market'}
+                    disabled={isPlaced}
+                    onClick={() => !isPlaced && handleTabChange('documents')}
+                  >
+                    <Send size={14} />
+                    Report Placement {isPlaced && '(already placed)'}
+                  </button>
+                  <button
+                    className={isPlaced ? 'text-link-btn' : 'btn-disabled-market'}
+                    disabled={!isPlaced}
+                    onClick={() => isPlaced && handleTabChange('daily-log')}
+                  >
+                    <BookOpen size={14} />
+                    Daily Log {!isPlaced && '(place first)'}
+                  </button>
+                  <button
+                    className={isPlaced ? 'text-link-btn' : 'btn-disabled-market'}
+                    disabled={!isPlaced}
+                    onClick={() => isPlaced && handleTabChange('history')}
+                  >
+                    <CheckCircle2 size={14} />
+                    Logbook History {!isPlaced && '(place first)'}
+                  </button>
                 </div>
               </div>
 
@@ -389,39 +419,6 @@ const StudentDashboard = () => {
                 );
               })()}
 
-              {/* Quick Links */}
-              <div className="bento-item info-card">
-                <label>Quick Access</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                  <button
-                    className={!isPlaced ? 'text-link-btn' : 'btn-disabled-market'}
-                    style={{ textAlign: 'left', fontSize: '13px', padding: '6px 0' }}
-                    disabled={isPlaced}
-                    onClick={() => !isPlaced && handleTabChange('documents')}
-                  >
-                    <Send size={14} style={{ display: 'inline', marginRight: '6px' }} />
-                    Report Placement {isPlaced && '(already placed)'}
-                  </button>
-                  <button
-                    className={isPlaced ? 'text-link-btn' : 'btn-disabled-market'}
-                    style={{ textAlign: 'left', fontSize: '13px', padding: '6px 0' }}
-                    disabled={!isPlaced}
-                    onClick={() => isPlaced && handleTabChange('daily-log')}
-                  >
-                    <BookOpen size={14} style={{ display: 'inline', marginRight: '6px' }} />
-                    Daily Log {!isPlaced && '(place first)'}
-                  </button>
-                  <button
-                    className={isPlaced ? 'text-link-btn' : 'btn-disabled-market'}
-                    style={{ textAlign: 'left', fontSize: '13px', padding: '6px 0' }}
-                    disabled={!isPlaced}
-                    onClick={() => isPlaced && handleTabChange('history')}
-                  >
-                    <CheckCircle2 size={14} style={{ display: 'inline', marginRight: '6px' }} />
-                    Logbook History {!isPlaced && '(place first)'}
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         );

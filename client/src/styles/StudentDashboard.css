@@ -156,8 +156,56 @@
 /* No placement warning */
 .status-warning-mini h4 { color: var(--warning); margin-bottom: 4px; }
 
+.bento-row.main-stats.student-overview-top {
+  grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.72fr) minmax(240px, 0.85fr);
+  align-items: stretch;
+}
+
+.quick-access-card {
+  min-height: 100%;
+}
+
+.quick-access-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.quick-access-actions button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 30px;
+  padding: 6px 0;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.quick-access-actions svg {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1180px) {
+  .bento-row.main-stats.student-overview-top {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.85fr);
+  }
+
+  .student-overview-top .welcome-box {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 768px) {
   .student-dashboard { padding: 0; }
+  .bento-row.main-stats.student-overview-top {
+    grid-template-columns: 1fr;
+  }
+  .student-overview-top .welcome-box {
+    grid-column: auto;
+  }
   .log-header-bar { flex-direction: column; align-items: stretch; }
   .status-group { justify-content: space-between; }
 }
