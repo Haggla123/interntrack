@@ -127,7 +127,7 @@ const ManagerOverview = ({ onNavigate }) => {
   return (
     <div className="bento-container fade-in">
       {/* Hero */}
-      <div className="bento-row main-stats">
+      <div className="bento-row main-stats cm-overview-hero">
         <div className="bento-item welcome-box">
           <div className="badge-pill">Company Portal</div>
           <h1>{greeting}, {(user?.name || 'Manager').split(' ')[0]}</h1>
@@ -160,7 +160,22 @@ const ManagerOverview = ({ onNavigate }) => {
       </div>
 
       {/* Stats grid */}
-      <div className="bento-grid-3">
+      <div className="cm-summary-grid">
+        <div className={`bento-item info-card cm-mobile-status-card ${stats?.unassignedInterns > 0 ? 'warning-alert' : ''}`}>
+          <label>{stats?.unassignedInterns > 0 ? 'Action Required' : 'All Assigned'}</label>
+          <h2 style={{ fontSize:'2rem', margin:'8px 0 4px', fontWeight:900, color: stats?.unassignedInterns > 0 ? '#d97706' : '#f59e0b' }}>
+            {String(stats?.unassignedInterns || 0).padStart(2, '0')}
+          </h2>
+          <p className="sub-text">Interns without a supervisor</p>
+          <button
+            className="alert-action-btn"
+            onClick={() => onNavigate('assignments')}
+            disabled={!stats?.unassignedInterns}
+          >
+            {stats?.unassignedInterns > 0 ? 'Assign Now' : <><Check size={14} /> All assigned</>}
+          </button>
+        </div>
+
         <div className="bento-item info-card">
           <label>Total Interns</label>
           <h2 style={{ fontSize:'2rem', margin:'8px 0 4px', fontWeight:900, color:'#1e293b' }}>
