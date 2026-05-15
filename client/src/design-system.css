@@ -2284,6 +2284,383 @@ body {
   background: linear-gradient(135deg, var(--brand-navy), var(--brand-blue));
 }
 
+/* ================================================================
+   PORTAL POLISH PASS
+   Shared color, spacing, and focus treatment across all pages.
+   ================================================================ */
+.main-area {
+  background:
+    radial-gradient(circle at 92% 10%, rgba(17,197,223,0.09), transparent 22rem),
+    radial-gradient(circle at 10% 88%, rgba(16,185,129,0.055), transparent 24rem),
+    linear-gradient(180deg, rgba(255,255,255,0.78), rgba(246,249,253,0.96));
+}
+
+.page-content,
+.bento-container,
+.overview-container {
+  position: relative;
+}
+
+.content-card,
+.bento-item,
+.stat-card,
+.modal-content,
+.admin-tab-banner,
+.cm-table-card {
+  border-radius: 14px;
+}
+
+.content-card,
+.bento-item,
+.stat-card,
+.admin-data-card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(251,253,255,0.98));
+}
+
+.content-card,
+.bento-item,
+.stat-card {
+  position: relative;
+}
+
+.content-card::before,
+.bento-item:not(.welcome-box)::before,
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(17,197,223,0.55), rgba(16,185,129,0.28), transparent 62%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s var(--ease);
+}
+
+.content-card:hover::before,
+.bento-item:not(.welcome-box):hover::before,
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.card-header-actions h3,
+.card-header h3,
+.content-card h3,
+.content-card h4 {
+  color: #12213a;
+  letter-spacing: 0;
+}
+
+.sub-text,
+.sub-text-sm,
+.helper-text-sm,
+.card-header p {
+  color: #6b7f98;
+}
+
+.top-nav-search,
+.search-wrapper-inline,
+.search-box,
+.admin-input,
+.admin-input-select,
+.admin-input-select-sm,
+.bento-input,
+.corporate-input-sm,
+.corporate-textarea,
+.cm-select,
+.dlf-input {
+  transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease), background 0.16s var(--ease);
+}
+
+.top-nav-search:focus-within,
+.search-wrapper-inline:focus-within,
+.search-box:focus-within,
+.admin-input:focus,
+.admin-input-select:focus,
+.admin-input-select-sm:focus,
+.bento-input:focus,
+.corporate-input-sm:focus,
+.corporate-textarea:focus,
+.cm-select:focus,
+.dlf-input:focus {
+  background: #ffffff;
+  border-color: rgba(20,119,184,0.55);
+  box-shadow: 0 0 0 4px rgba(17,197,223,0.12);
+}
+
+.data-table tbody tr,
+.data-table-lite tbody tr,
+.cm-table tr {
+  transition: background 0.16s var(--ease), transform 0.16s var(--ease);
+}
+
+.data-table tbody tr:hover,
+.data-table-lite tbody tr:hover,
+.cm-table tr:hover {
+  background: #f3fbff;
+}
+
+.badge-pill-green,
+.badge-pill-amber,
+.badge-pill-blue,
+.badge-pill {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+}
+
+.password-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(17,197,223,0.18), transparent 24rem),
+    rgba(7,18,38,0.72);
+  backdrop-filter: blur(8px);
+}
+
+.password-modal-card {
+  position: relative;
+  width: min(100%, 420px);
+  overflow: hidden;
+  padding: 24px;
+  border: 1px solid rgba(191,219,254,0.65);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 28px 70px rgba(3,37,108,0.28);
+}
+
+.password-modal-glow {
+  position: absolute;
+  inset: -90px -110px auto auto;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(17,197,223,0.20), transparent 68%);
+  pointer-events: none;
+}
+
+.password-modal-header {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.password-modal-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #075985;
+  border: 1px solid #bae6fd;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #e0f7ff, #eff6ff);
+  box-shadow: 0 12px 24px rgba(17,197,223,0.16);
+}
+
+.password-modal-kicker {
+  display: inline-flex;
+  margin-bottom: 4px;
+  color: #1477b8;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.password-modal-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+.password-modal-header p {
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.password-modal-form {
+  display: grid;
+  gap: 12px;
+}
+
+.password-modal-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px 12px;
+  color: #b91c1c;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.password-modal-alert svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.password-field label {
+  display: block;
+  margin-bottom: 5px;
+  color: #334155;
+  font-size: 11.5px;
+  font-weight: 850;
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrap > svg {
+  position: absolute;
+  left: 12px;
+  color: #7b8da3;
+  pointer-events: none;
+}
+
+.password-input-wrap input {
+  width: 100%;
+  min-height: 43px;
+  padding: 10px 40px 10px 36px;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1.5px solid #dbe4ef;
+  border-radius: 12px;
+  outline: none;
+  font-size: 14px;
+  transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+}
+
+.password-input-wrap input:focus {
+  border-color: #11c5df;
+  box-shadow: 0 0 0 4px rgba(17,197,223,0.12);
+}
+
+.password-input-wrap button {
+  position: absolute;
+  right: 10px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: #64748b;
+  background: transparent;
+  border: none;
+}
+
+.password-rule-card {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  background: #f5f9ff;
+  border: 1px solid #dbeafe;
+  border-radius: 13px;
+}
+
+.password-rule-card div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8aa0b8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.password-rule-card div.pass {
+  color: #047857;
+}
+
+.password-rule-card svg {
+  color: #cbd5e1;
+}
+
+.password-rule-card .pass svg {
+  color: #10b981;
+}
+
+.password-submit-btn {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 4px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--brand-navy), var(--brand-blue));
+  border: none;
+  border-radius: 13px;
+  box-shadow: 0 12px 24px rgba(6,42,115,0.18);
+  font-size: 14px;
+  font-weight: 900;
+  transition: transform 0.16s var(--ease), box-shadow 0.16s var(--ease), opacity 0.16s var(--ease);
+}
+
+.password-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(20,119,184,0.24);
+}
+
+.password-submit-btn:disabled {
+  color: #8aa0b8;
+  background: #e2e8f0;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.password-success-state {
+  position: relative;
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.password-success-icon {
+  display: grid;
+  width: 82px;
+  height: 82px;
+  place-items: center;
+  color: #047857;
+  background: linear-gradient(135deg, #dcfce7, #ecfdf5);
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  box-shadow: 0 18px 34px rgba(16,185,129,0.20);
+}
+
+.password-success-sparkle {
+  position: absolute;
+  top: 36px;
+  right: 96px;
+  color: #f59e0b;
+}
+
+.password-success-state h4 {
+  margin: 10px 0 0;
+  color: #064e3b;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.password-success-state p {
+  margin: 0;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 750;
+}
+
 @media (max-width: 768px) {
   .top-nav {
     box-shadow: 0 6px 18px rgba(15,23,42,0.07);
@@ -2293,5 +2670,18 @@ body {
   .bento-item:hover,
   .stat-card:hover {
     transform: none;
+  }
+
+  .password-modal-card {
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .password-modal-header {
+    gap: 12px;
+  }
+
+  .password-modal-header h3 {
+    font-size: 1.18rem;
   }
 }
