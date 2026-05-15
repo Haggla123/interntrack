@@ -1,0 +1,446 @@
+/* ================================================================
+   LogEntryForm.css
+   Design: Checkbox-based activity logger
+   Clean writing environment — grouped activities with check-tiles.
+   Navy + white + subtle green/amber status accents.
+   ================================================================ */
+
+.dlf-root {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Header bar ───────────────────────────────────────────────── */
+.dlf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dlf-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dlf-date-badge,
+.dlf-company-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 11px;
+  border-radius: 20px;
+}
+
+.dlf-date-badge {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border: 1px solid var(--gray-200);
+}
+
+.dlf-company-tag {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-weight: 700;
+}
+
+.dlf-status-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.dlf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 20px;
+  border: 1.5px solid;
+  white-space: nowrap;
+}
+
+.dlf-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Banners ──────────────────────────────────────────────────── */
+.dlf-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--r-lg);
+  border: 1px solid;
+  animation: dlf-in 0.25s ease;
+}
+
+.dlf-banner svg { flex-shrink: 0; margin-top: 1px; }
+
+.dlf-banner strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.dlf-banner p {
+  font-size: 12.5px;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.dlf-banner-gray  { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
+.dlf-banner-green { background: #f0fdf4; border-color: #86efac; color: #15803d; }
+.dlf-banner-red   { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+
+/* ── Main card ────────────────────────────────────────────────── */
+.dlf-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* ── Section ──────────────────────────────────────────────────── */
+.dlf-section {
+  padding: 20px 24px;
+}
+
+.dlf-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dlf-section-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gray-800);
+  margin-bottom: 2px;
+}
+
+.dlf-section-sub {
+  font-size: 12px;
+  color: var(--gray-400);
+}
+
+.dlf-optional-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: var(--gray-100);
+  color: var(--gray-400);
+  border: 1px solid var(--gray-200);
+  margin-left: 4px;
+}
+
+/* ── Selected count badge ─────────────────────────────────────── */
+.dlf-selected-count {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--gray-100);
+  color: var(--gray-400);
+  border: 1px solid var(--gray-200);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.dlf-selected-count[data-active="true"] {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+/* ── Loading categories ───────────────────────────────────────── */
+.dlf-loading-cats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  padding: 32px 16px;
+  color: var(--gray-400);
+  font-size: 13px;
+}
+
+/* ── Activity groups ──────────────────────────────────────────── */
+.dlf-activity-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dlf-act-group {
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.dlf-act-group:hover {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.dlf-act-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--gray-50);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dlf-act-group-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dlf-act-group-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.dlf-act-group-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.dlf-act-group-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: #10b981;
+  color: #fff;
+  min-width: 16px;
+  text-align: center;
+}
+
+.dlf-act-chevron {
+  color: var(--gray-400);
+  transition: transform 0.2s ease;
+}
+
+.dlf-act-chevron-open {
+  transform: rotate(180deg);
+}
+
+/* ── Activity items (checkboxes) ──────────────────────────────── */
+.dlf-act-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+  padding: 10px 12px;
+  animation: dlf-in 0.2s ease;
+}
+
+.dlf-act-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.dlf-act-item:hover:not(:disabled) {
+  border-color: var(--brand-blue);
+  background: #f8faff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(23, 104, 172, 0.08);
+}
+
+.dlf-act-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dlf-act-item-selected {
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
+.dlf-act-item-selected:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.dlf-act-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 2px solid var(--gray-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  background: #fff;
+}
+
+.dlf-act-check-on {
+  border-color: #10b981;
+  background: #10b981;
+  color: #fff;
+  animation: dlf-check-pop 0.25s ease;
+}
+
+@keyframes dlf-check-pop {
+  0%   { transform: scale(0.7); }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.dlf-act-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--gray-700);
+  text-align: left;
+  line-height: 1.3;
+}
+
+/* ── Notes count ──────────────────────────────────────────────── */
+.dlf-notes-count {
+  font-size: 11px;
+  color: var(--gray-400);
+  font-weight: 600;
+  margin: 4px 0 0;
+  text-align: right;
+}
+
+/* ── Input ────────────────────────────────────────────────────── */
+.dlf-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--gray-800);
+  background: #fafbfc;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+.dlf-input:focus {
+  border-color: var(--brand-blue);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(23, 104, 172, 0.08);
+}
+
+.dlf-input:disabled {
+  background: var(--gray-50);
+  color: var(--gray-400);
+  cursor: not-allowed;
+}
+
+.dlf-input::placeholder { color: var(--gray-300); }
+
+/* ── Divider ──────────────────────────────────────────────────── */
+.dlf-divider {
+  height: 1px;
+  background: var(--gray-100);
+  margin: 0;
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.dlf-footer {
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--gray-50);
+}
+
+.dlf-footer-hint { font-size: 12px; }
+.dlf-footer-warn  { color: #d97706; font-weight: 600; }
+.dlf-footer-ready { color: #10b981; font-weight: 700; display: flex; align-items: center; }
+
+/* ── Submit button ────────────────────────────────────────────── */
+.dlf-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: not-allowed;
+  background: var(--gray-200);
+  color: var(--gray-400);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.dlf-submit-ready {
+  cursor: pointer;
+  background: var(--brand-navy);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(3, 37, 108, 0.25);
+}
+
+.dlf-submit-ready:hover {
+  background: var(--brand-blue);
+  box-shadow: 0 4px 14px rgba(23, 104, 172, 0.3);
+  transform: translateY(-1px);
+}
+
+.dlf-submit-ready:active { transform: translateY(0); }
+
+/* ── Animations ───────────────────────────────────────────────── */
+@keyframes dlf-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dlf-spin {
+  to { transform: rotate(360deg); }
+}
+.dlf-spin { animation: dlf-spin 0.8s linear infinite; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .dlf-header  { flex-direction: column; align-items: flex-start; }
+  .dlf-footer  { flex-direction: column; align-items: stretch; }
+  .dlf-submit-btn { justify-content: center; width: 100%; }
+  .dlf-section { padding: 16px 16px; }
+  .dlf-act-items { grid-template-columns: 1fr; }
+}
