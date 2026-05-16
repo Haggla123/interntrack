@@ -36,6 +36,27 @@ const getCompanyId = (companyId) => {
   return companyId._id || companyId.id || null;
 };
 
+const getCalendarProgress = (placementStartDate, totalWeeks = 6) => {
+  const safeTotalWeeks = Math.max(1, Number(totalWeeks) || 6);
+  if (!placementStartDate) {
+    return { completedWeeks: 0, currentWeek: 0, elapsedDays: 0, totalWeeks: safeTotalWeeks };
+  }
+
+  const start = new Date(placementStartDate);
+  if (Number.isNaN(start.getTime())) {
+    return { completedWeeks: 0, currentWeek: 0, elapsedDays: 0, totalWeeks: safeTotalWeeks };
+  }
+
+  const startUtc = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const elapsedDays = Math.max(0, Math.floor((todayUtc - startUtc) / (24 * 60 * 60 * 1000)));
+  const completedWeeks = Math.min(Math.floor(elapsedDays / 7), safeTotalWeeks);
+  const currentWeek = Math.min(Math.floor(elapsedDays / 7) + 1, safeTotalWeeks);
+
+  return { completedWeeks, currentWeek, elapsedDays, totalWeeks: safeTotalWeeks };
+};
+
 const isStudentPlaced = (user, savedPlacement = null) => {
   if (!user && !savedPlacement) return false;
   if (savedPlacement) return true;
@@ -59,6 +80,7 @@ const buildPlacementFromUser = (user) => {
     supervisorEmail: user.industrialSupervisor?.email || user.companyId?.supervisorEmail || user.companyId?.manager?.email || '',
     supervisorPhone: user.industrialSupervisor?.phone || user.companyId?.supervisorPhone || user.companyId?.manager?.phone || '',
     supervisorOrg: user.industrialSupervisor?.companyOrg || user.companyId?.manager?.companyOrg || user.companyName || user.companyId?.name || '',
+    placementStartDate: user.placementStartDate || user.updatedAt || user.createdAt || null,
   };
 };
 
@@ -127,23 +149,32 @@ const StudentDashboard = () => {
     }
   }, [isPlaced, activeTab]);
 
-  // Load log stats
+  // Load log totals; placement progress itself is calendar-based from placementStartDate.
   useEffect(() => {
     if (!isPlaced) return;
     getMyLogs()
       .then(res => {
         const logs = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : [];
-        const approved = logs.filter(l => l.status === 'Approved');
-        if (!approved.length) return;
-        const completedWeeks = Math.floor(approved.length / 5);
+        const calendar = getCalendarProgress(user?.placementStartDate || placementDetails?.placementStartDate, systemTotalWeeks);
         setLogStats({
-          completedWeeks: Math.min(completedWeeks, systemTotalWeeks),
-          totalWeeks: systemTotalWeeks,
+          completedWeeks: calendar.completedWeeks,
+          currentWeek: calendar.currentWeek,
+          elapsedDays: calendar.elapsedDays,
+          totalWeeks: calendar.totalWeeks,
           totalLogs: logs.length,
         });
       })
-      .catch(() => { });
-  }, [isPlaced, systemTotalWeeks]);
+      .catch(() => {
+        const calendar = getCalendarProgress(user?.placementStartDate || placementDetails?.placementStartDate, systemTotalWeeks);
+        setLogStats(prev => ({
+          ...prev,
+          completedWeeks: calendar.completedWeeks,
+          currentWeek: calendar.currentWeek,
+          elapsedDays: calendar.elapsedDays,
+          totalWeeks: calendar.totalWeeks,
+        }));
+      });
+  }, [isPlaced, systemTotalWeeks, user?.placementStartDate, placementDetails?.placementStartDate]);
 
   const refreshStudentTabData = useCallback(async () => {
     await Promise.allSettled([
@@ -156,22 +187,25 @@ const StudentDashboard = () => {
       }),
       isPlaced ? getMyLogs().then(res => {
         const logs = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : [];
-        const approved = logs.filter(l => l.status === 'Approved');
-        const completedWeeks = Math.floor(approved.length / 5);
+        const calendar = getCalendarProgress(user?.placementStartDate || placementDetails?.placementStartDate, systemTotalWeeks);
         setLogStats({
-          completedWeeks: Math.min(completedWeeks, systemTotalWeeks),
-          totalWeeks: systemTotalWeeks,
+          completedWeeks: calendar.completedWeeks,
+          currentWeek: calendar.currentWeek,
+          elapsedDays: calendar.elapsedDays,
+          totalWeeks: calendar.totalWeeks,
           totalLogs: logs.length,
         });
       }) : Promise.resolve(),
       new Promise(resolve => setTimeout(resolve, 250)),
     ]);
-  }, [isPlaced, refreshUser, systemTotalWeeks]);
+  }, [isPlaced, refreshUser, systemTotalWeeks, user?.placementStartDate, placementDetails?.placementStartDate]);
 
   const studentInfo = {
     name: user?.name || 'Student',
     indexNumber: user?.indexNumber || '',
     completedWeeks: logStats.completedWeeks,
+    currentWeek: logStats.currentWeek || 0,
+    elapsedDays: logStats.elapsedDays || 0,
     totalWeeks: logStats.totalWeeks,
     totalLogs: logStats.totalLogs,
   };
@@ -187,6 +221,7 @@ const StudentDashboard = () => {
         status: 'Placed',
         companyId: taggedPlacement.companyId,
         companyName: taggedPlacement.companyName,
+        placementStartDate: taggedPlacement.placementStartDate || new Date().toISOString(),
       });
     }
     setPlacement(taggedPlacement);
@@ -336,7 +371,7 @@ const StudentDashboard = () => {
                   />
                 </div>
                 <div className="progress-footer">
-                  <span>{isPlaced ? `Week ${studentInfo.completedWeeks}` : 'Not started'}</span>
+                  <span>{isPlaced ? `Week ${studentInfo.currentWeek || 1}` : 'Not started'}</span>
                   <span> / </span>
                   <span>{studentInfo.totalWeeks} Weeks Total</span>
                 </div>

@@ -1,10 +1,10 @@
 // Controllers/studentController.js
 const User   = require('../models/User');
-const Log    = require('../models/Log');
 const Grade  = require('../models/Grade');
 const Company = require('../models/Company');
 const crypto = require('crypto');
 const { canAccessStudent } = require('../utils/accessControl');
+const { getPlacementProgress } = require('../utils/placementProgress');
 
 const makeTempPassword = () =>
   'UENR-' + crypto.randomBytes(6).toString('base64url').slice(0, 8);
@@ -85,9 +85,8 @@ const getStudents = async (req, res) => {
 };
 
 // ── GET /api/students/stats ───────────────────────────────────────
-// Batch stats: 2 MongoDB aggregations for N students in one request.
-// Replaces the N+1 pattern in AcademicDashboard and MyInterns where
-// each student previously required 2 separate API calls.
+// Batch stats for N students in one request.
+// Progress is calendar-based from placementStartDate.
 // Call: GET /api/students/stats?ids=id1,id2,id3&totalWeeks=6
 const getStudentStats = async (req, res) => {
   try {
@@ -107,38 +106,36 @@ const getStudentStats = async (req, res) => {
 
     const totalWeeks = Math.max(1, parseInt(req.query.totalWeeks) || 6);
 
-    let allowedIds = ids;
+    let allowedStudents = [];
     if (req.user.role === 'academic') {
-      const assigned = await User.find({
+      allowedStudents = await User.find({
         _id: { $in: ids },
         role: 'student',
         isActive: true,
         academicSupervisor: req.user._id,
-      }).select('_id');
-      allowedIds = assigned.map(s => s._id);
+      }).select('_id placementStatus placementStartDate createdAt updatedAt');
+    } else {
+      allowedStudents = await User.find({
+        _id: { $in: ids },
+        role: 'student',
+        isActive: true,
+      }).select('_id placementStatus placementStartDate createdAt updatedAt');
     }
+
+    const allowedIds = allowedStudents.map(s => s._id);
 
     if (!allowedIds.length) {
       return res.status(200).json({ success: true, data: {} });
     }
 
-    const [logAgg, gradeAgg] = await Promise.all([
-      Log.aggregate([
-        { $match: { student: { $in: allowedIds }, status: 'Approved' } },
-        { $group: { _id: '$student', approvedCount: { $sum: 1 } } },
-      ]),
-      Grade.aggregate([
-        { $match: { student: { $in: allowedIds } } },
-        { $sort: { updatedAt: -1 } },
-        { $group: {
-          _id: '$student',
-          grades: { $push: { type: '$type', grade: '$grade', score: '$score', _id: '$_id' } },
-        }},
-      ]),
+    const gradeAgg = await Grade.aggregate([
+      { $match: { student: { $in: allowedIds } } },
+      { $sort: { updatedAt: -1 } },
+      { $group: {
+        _id: '$student',
+        grades: { $push: { type: '$type', grade: '$grade', score: '$score', _id: '$_id' } },
+      }},
     ]);
-
-    const logMap = {};
-    logAgg.forEach(l => { logMap[l._id.toString()] = l.approvedCount; });
 
     const gradeMap = {};
     gradeAgg.forEach(g => {
@@ -152,16 +149,15 @@ const getStudentStats = async (req, res) => {
     });
 
     const stats = {};
-    allowedIds.forEach(id => {
-      const sid          = id.toString();
-      const approvedCount = logMap[sid] || 0;
-      const weeks        = Math.min(Math.floor(approvedCount / 5), totalWeeks);
-      const progress     = Math.round((weeks / totalWeeks) * 100);
-      const g            = gradeMap[sid] || {};
+    allowedStudents.forEach(student => {
+      const sid = student._id.toString();
+      const placement = getPlacementProgress(student, totalWeeks);
+      const g = gradeMap[sid] || {};
       stats[sid] = {
-        approvedLogs: approvedCount,
-        weeks,
-        progress,
+        elapsedDays: placement.elapsedDays,
+        weeks: placement.weeks,
+        currentWeek: placement.currentWeek,
+        progress: placement.progress,
         indusScore: g.indusScore || 0,
         gradeId:    g.gradeId   || null,
         finalGrade: g.finalGrade || '-',
@@ -240,7 +236,10 @@ const assignStudent = async (req, res) => {
     if (industrialSupervisorId) updates.industrialSupervisor = industrialSupervisorId;
     if (companyId)             updates.companyId            = companyId;
     if (companyName)           updates.companyName          = companyName;
-    if (companyId || companyName) updates.placementStatus   = 'Active';
+    if (companyId || companyName) {
+      updates.placementStatus = 'Active';
+      updates.placementStartDate = new Date();
+    }
 
     const student = await User.findByIdAndUpdate(
       req.params.id, updates, { new: true, runValidators: true }
@@ -298,6 +297,7 @@ const revokePlacement = async (req, res) => {
       req.params.id,
       {
         companyName: '', companyId: null, placementStatus: 'Unplaced',
+        placementStartDate: null,
         academicSupervisor: null, industrialSupervisor: null,
         gradeStatus: 'Pending', finalGrade: null,
       },

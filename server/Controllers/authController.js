@@ -79,12 +79,15 @@ const sendToken = (user, statusCode, res) => {
       department:          user.department,
       staffId:             user.staffId,
       placementStatus:     user.placementStatus,
+      placementStartDate:  user.placementStartDate,
       companyId:           user.companyId,
       companyName:         user.companyName,
       academicSupervisor:  user.academicSupervisor,
       companyOrg:          user.companyOrg,
       profilePicture:      user.profilePicture,
       lastLogin:           user.lastLogin,
+      createdAt:           user.createdAt,
+      updatedAt:           user.updatedAt,
     },
   });
 };

@@ -41,8 +41,8 @@ const LogSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    // week is stored directly — calculated by the backend at submission time
-    // so the frontend can always group by log.week reliably
+    // Calendar internship week, derived from the student's active placementStartDate.
+    // Kept on the log for display/grouping compatibility; it is not count-based.
     week: {
       type: Number,
       default: 1,

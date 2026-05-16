@@ -261,6 +261,7 @@ const approvePlacement = async (req, res) => {
       companyName:          company.name,
       companyId:            company._id,
       placementStatus:      'Active',
+      placementStartDate:   new Date(),
       industrialSupervisor: existingManager?.role === 'industrial' ? existingManager._id : null,
     });
 

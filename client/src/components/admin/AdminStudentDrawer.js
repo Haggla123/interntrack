@@ -91,7 +91,7 @@ const AdminStudentDrawer = ({ student, onClose, onStudentUpdated, onStudentDelet
     try {
       await revokePlacement(studentId);
       flash('success', `Placement revoked for ${student.name}.`);
-      if (onStudentUpdated) onStudentUpdated(studentId, { placementStatus: 'Unplaced', companyName: '', companyId: null });
+      if (onStudentUpdated) onStudentUpdated(studentId, { placementStatus: 'Unplaced', companyName: '', companyId: null, placementStartDate: null });
     } catch (err) {
       flash('error', err.message || 'Failed to revoke placement.');
     } finally {

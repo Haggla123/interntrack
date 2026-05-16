@@ -3,6 +3,7 @@ const Log      = require('../models/Log');
 const Settings = require('../models/Settings');
 const Company  = require('../models/Company');
 const { canAccessStudent, requireStudentAccess } = require('../utils/accessControl');
+const { getPlacementWeekNumber } = require('../utils/placementProgress');
 
 const toDateOnly = (date) => {
   const d = new Date(date);
@@ -10,12 +11,13 @@ const toDateOnly = (date) => {
   return d;
 };
 
-// Week number based on APPROVED logs only (groups of 5 = 1 week).
-// Counting all logs (including Pending/Rejected) inflated the week number.
-const getWeekNumber = (existingLogs) => {
-  const approved = existingLogs.filter(l => l.status === 'Approved');
-  const sorted   = [...approved].sort((a, b) => new Date(a.date) - new Date(b.date));
-  return Math.floor(sorted.length / 5) + 1;
+const withCalendarWeek = (log, student) => {
+  const data = typeof log.toObject === 'function' ? log.toObject() : log;
+  const sourceStudent = student || data.student;
+  return {
+    ...data,
+    week: getPlacementWeekNumber(sourceStudent, data.date || new Date()),
+  };
 };
 
 // ── POST /api/logs ───────────────────────────────────────────────
@@ -82,8 +84,7 @@ const submitLog = async (req, res) => {
       });
     }
 
-    const existingLogs     = await Log.find({ student: req.user._id });
-    const week             = getWeekNumber(existingLogs);
+    const week             = getPlacementWeekNumber(req.user, now);
     const resolvedCompanyId = companyId || req.user.companyId || null;
 
     // Build a human-readable activity string from checkbox keys for backward compat
@@ -121,7 +122,7 @@ const submitLog = async (req, res) => {
 const getMyLogs = async (req, res) => {
   try {
     const logs = await Log.find({ student: req.user._id }).sort({ date: -1 });
-    res.status(200).json({ success: true, data: logs });
+    res.status(200).json({ success: true, data: logs.map(log => withCalendarWeek(log, req.user)) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -142,10 +143,10 @@ const getStudentLogs = async (req, res) => {
         .sort({ date: -1 })
         .skip(skip)
         .limit(limit)
-        .populate('student', 'name indexNumber'),
+        .populate('student', 'name indexNumber placementStatus placementStartDate createdAt updatedAt'),
       Log.countDocuments({ student: req.params.studentId }),
     ]);
-    res.status(200).json({ success: true, data: logs, total, page, pages: Math.ceil(total / limit) });
+    res.status(200).json({ success: true, data: logs.map(log => withCalendarWeek(log, student)), total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -178,8 +179,8 @@ const getPendingLogs = async (req, res) => {
 
     const logs = await Log.find(filter)
       .sort({ date: -1 })
-      .populate('student', 'name indexNumber department');
-    res.status(200).json({ success: true, data: logs });
+      .populate('student', 'name indexNumber department placementStatus placementStartDate createdAt updatedAt');
+    res.status(200).json({ success: true, data: logs.map(log => withCalendarWeek(log)) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -198,10 +199,10 @@ const getLogs = async (req, res) => {
         .sort({ date: -1 })
         .skip(skip)
         .limit(limit)
-        .populate('student', 'name indexNumber department'),
+        .populate('student', 'name indexNumber department placementStatus placementStartDate createdAt updatedAt'),
       Log.countDocuments(),
     ]);
-    res.status(200).json({ success: true, data: logs, total, page, pages: Math.ceil(total / limit) });
+    res.status(200).json({ success: true, data: logs.map(log => withCalendarWeek(log)), total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -210,7 +211,7 @@ const getLogs = async (req, res) => {
 // ── PUT /api/logs/:id/approve ────────────────────────────────────
 const approveLog = async (req, res) => {
   try {
-    const log = await Log.findById(req.params.id).populate('student', '_id role academicSupervisor industrialSupervisor companyId');
+    const log = await Log.findById(req.params.id).populate('student', '_id role academicSupervisor industrialSupervisor companyId placementStatus placementStartDate createdAt updatedAt');
     if (!log) return res.status(404).json({ message: 'Log not found.' });
     if (!canAccessStudent(req.user, log.student)) {
       return res.status(403).json({ message: 'Access denied.' });
@@ -219,7 +220,7 @@ const approveLog = async (req, res) => {
     log.status = 'Approved';
     log.supervisorNote = req.body.note || '';
     await log.save();
-    res.status(200).json({ success: true, data: log });
+    res.status(200).json({ success: true, data: withCalendarWeek(log) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -228,7 +229,7 @@ const approveLog = async (req, res) => {
 // ── PUT /api/logs/:id/reject ─────────────────────────────────────
 const rejectLog = async (req, res) => {
   try {
-    const log = await Log.findById(req.params.id).populate('student', '_id role academicSupervisor industrialSupervisor companyId');
+    const log = await Log.findById(req.params.id).populate('student', '_id role academicSupervisor industrialSupervisor companyId placementStatus placementStartDate createdAt updatedAt');
     if (!log) return res.status(404).json({ message: 'Log not found.' });
     if (!canAccessStudent(req.user, log.student)) {
       return res.status(403).json({ message: 'Access denied.' });
@@ -237,7 +238,7 @@ const rejectLog = async (req, res) => {
     log.status = 'Rejected';
     log.supervisorNote = req.body.note || '';
     await log.save();
-    res.status(200).json({ success: true, data: log });
+    res.status(200).json({ success: true, data: withCalendarWeek(log) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -21,8 +21,6 @@ const userSchema = new mongoose.Schema({
   indexNumber:    { type: String, sparse: true, unique: true },   // e.g. UEB3214522
   department:     { type: String },
   phone:          { type: String, default: '' },
-  completedWeeks: { type: Number, default: 0 },
-  totalWeeks:     { type: Number, default: 6 },
   status: {
     type: String,
     enum: ['Pending', 'Placed', 'Graded'],
@@ -39,6 +37,7 @@ const userSchema = new mongoose.Schema({
     enum: ['Unplaced', 'Active', 'Completed'],
     default: 'Unplaced',
   },
+  placementStartDate: { type: Date, default: null },
   gradeStatus: {
     type: String,
     enum: ['Pending', 'Graded'],

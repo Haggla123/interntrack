@@ -194,6 +194,7 @@ const applyForSlot = async (req, res) => {
       companyId: company._id,
       companyName: company.name,
       placementStatus: 'Active',
+      placementStartDate: new Date(),
     });
 
     res.status(200).json({ success: true, data: company });

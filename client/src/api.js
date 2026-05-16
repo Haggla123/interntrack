@@ -132,8 +132,7 @@ export const getMyGrades     = ()            => request('GET',  '/grades/mine');
 export const submitGrade     = (data)        => request('POST', '/grades', data);
 export const updateGrade     = (id, data)    => request('PUT',  `/grades/${id}`, data);
 export const getStudentGrade = (studentId)   => request('GET',  `/grades/student/${studentId}`);
-// Batch stats: 2 aggregations server-side instead of 2N individual requests.
-// Pass an array of student IDs and the configured totalWeeks.
+// Batch stats: calendar progress from placementStartDate plus grading metadata.
 export const getStudentStats = (ids, totalWeeks = 6) =>
   request('GET', `/students/stats?ids=${ids.join(',')}&totalWeeks=${totalWeeks}`);
 

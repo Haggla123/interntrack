@@ -28,7 +28,7 @@ const canAccessStudent = (user, student) => {
 
 const loadStudentForAccess = async (studentId) =>
   User.findOne({ _id: studentId, role: 'student', isActive: true })
-    .select('_id role academicSupervisor industrialSupervisor companyId');
+    .select('_id role academicSupervisor industrialSupervisor companyId placementStatus placementStartDate createdAt updatedAt');
 
 const requireStudentAccess = async (req, res, studentId) => {
   const student = await loadStudentForAccess(studentId);

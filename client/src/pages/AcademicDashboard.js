@@ -34,6 +34,8 @@ const norm = (s, stats) => {
     // Pull from batch stats if available, fall back to student record values
     progress:   st.progress   ?? s.progress    ?? 0,
     weeks:      st.weeks      ?? s.weeks        ?? 0,
+    currentWeek: st.currentWeek ?? s.currentWeek ?? 0,
+    elapsedDays: st.elapsedDays ?? s.elapsedDays ?? 0,
     indusScore: st.indusScore ?? s.indusScore   ?? s.industrialScore ?? 0,
     status:     (st.gradeId || s.gradeStatus === 'Graded') ? 'Graded' : 'Pending Grading',
     finalGrade: st.finalGrade !== '-' ? st.finalGrade : (s.finalGrade || '-'),
