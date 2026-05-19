@@ -94,6 +94,16 @@ const GROUP_STYLES = {
 };
 const DEFAULT_GROUP_STYLE = { bg: '#f0f9ff', border: '#7dd3fc', text: '#0c4a6e', Icon: Pin };
 
+const DEFAULT_INDUSTRIAL_EVALUATION_CRITERIA = [
+  { key: 'attendance', label: 'Attendance', max: 15 },
+  { key: 'punctuality', label: 'Punctuality', max: 15 },
+  { key: 'cooperation', label: 'Co-operation', max: 10 },
+  { key: 'aptitudeForLearning', label: 'Aptitude for Learning', max: 15 },
+  { key: 'understandingOfJob', label: 'Understanding of Job', max: 15 },
+  { key: 'safetyAdherence', label: 'Adherence to Safety & Environment Rules', max: 15 },
+  { key: 'workIndependently', label: 'Ability to Work Independently', max: 15 },
+];
+
 const ADMIN_NOTIFICATION_CATEGORIES = {
   placement: { label: 'Placement', tab: 'pending-placements', tone: 'amber', Icon: ClipboardCheck },
   students: { label: 'Students', tab: 'students', tone: 'blue', Icon: Users },
@@ -163,6 +173,8 @@ const AdminDashboard = () => {
   const [newCatGroup, setNewCatGroup] = useState('Technical Tasks');
   const [newGroupInput, setNewGroupInput] = useState('');
   const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(false);
+  const [newCriterionLabel, setNewCriterionLabel] = useState('');
+  const [newCriterionMax, setNewCriterionMax] = useState(10);
   const [actionMsg, setActionMsg] = useState({ text: '', type: '' }); // type: 'success'|'error'
   const [notifications, setNotifications] = useState([]);
 
@@ -1384,6 +1396,7 @@ default:
               strictTimeWindow:         !!sForm.strictTimeWindow,
               allowSelfPlacement:       !!sForm.allowSelfPlacement,
               industrialPortalEnabled:  !!sForm.industrialPortalEnabled,
+              industrialEvaluationCriteria: (sForm.industrialEvaluationCriteria || DEFAULT_INDUSTRIAL_EVALUATION_CRITERIA),
               activityCategories:       sForm.activityCategories || [],
             });
             setSettings(res?.data || res);
@@ -1417,6 +1430,40 @@ default:
         };
 
         const setSField = (k, v) => setSettings(prev => ({ ...prev, [k]: v }));
+
+        const makeCriterionKey = (label, index = 0) => {
+          const base = (label || '')
+            .trim()
+            .toLowerCase()
+            .replace(/&/g, ' and ')
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+          return base || `criterion_${index + 1}`;
+        };
+
+        const updateCriterion = (idx, patch) => {
+          const criteria = [...(sForm.industrialEvaluationCriteria || [])];
+          criteria[idx] = { ...criteria[idx], ...patch };
+          setSField('industrialEvaluationCriteria', criteria);
+        };
+
+        const addCriterion = () => {
+          const label = newCriterionLabel.trim();
+          const max = Number(newCriterionMax);
+          if (!label) { setSettingsMsg('Criterion label is required.'); return; }
+          if (!Number.isFinite(max) || max <= 0) { setSettingsMsg('Criterion max marks must be greater than 0.'); return; }
+          const current = sForm.industrialEvaluationCriteria || [];
+          let key = makeCriterionKey(label, current.length);
+          let suffix = 2;
+          const used = new Set(current.map(c => c.key));
+          while (used.has(key)) {
+            key = `${makeCriterionKey(label, current.length)}_${suffix}`;
+            suffix += 1;
+          }
+          setSField('industrialEvaluationCriteria', [...current, { key, label, max }]);
+          setNewCriterionLabel('');
+          setNewCriterionMax(10);
+        };
 
         // Convert a date value (ISO string or Date object) to YYYY-MM-DD
         // using LOCAL timezone so date inputs never show the wrong day
@@ -1532,6 +1579,88 @@ default:
                   </div>
 
                   {/* ── SECTION 3: GEOFENCING ── */}
+                  <div className="settings-section full-width">
+                    <h4 className="settings-title"><ClipboardList size={18} /> Industrial Evaluation Criteria</h4>
+                    <p className="helper-text-sm" style={{marginBottom:'12px'}}>
+                      Industrial supervisors score interns with these criteria. Each submitted evaluation keeps a snapshot, so future changes do not rewrite old records.
+                    </p>
+
+                    <div style={{display:'grid', gap:'10px', marginBottom:'14px'}}>
+                      {(sForm.industrialEvaluationCriteria || []).map((criterion, idx) => (
+                        <div key={criterion.key || idx} style={{display:'grid', gridTemplateColumns:'minmax(180px, 1fr) 120px 36px', gap:'8px', alignItems:'center'}}>
+                          <input
+                            type="text"
+                            className="admin-input-select"
+                            value={criterion.label || ''}
+                            onChange={e => updateCriterion(idx, { label: e.target.value })}
+                            placeholder="Criterion label"
+                            style={{fontSize:'13px'}}
+                          />
+                          <div className="input-with-unit">
+                            <input
+                              type="number"
+                              min="1"
+                              className="weight-field"
+                              value={criterion.max ?? ''}
+                              onChange={e => updateCriterion(idx, { max: Number(e.target.value) })}
+                            />
+                            <span className="unit">marks</span>
+                          </div>
+                          <button
+                            type="button"
+                            title={`Remove ${criterion.label || 'criterion'}`}
+                            disabled={(sForm.industrialEvaluationCriteria || []).length <= 1}
+                            onClick={() => {
+                              const current = sForm.industrialEvaluationCriteria || [];
+                              if (current.length <= 1) {
+                                setSettingsMsg('At least one industrial evaluation criterion is required.');
+                                return;
+                              }
+                              setSField('industrialEvaluationCriteria', current.filter((_, i) => i !== idx));
+                            }}
+                            style={{
+                              width:'36px', height:'36px', border:'1px solid #fecaca', borderRadius:'8px',
+                              background:'#fff', color:'#dc2626', cursor:(sForm.industrialEvaluationCriteria || []).length <= 1 ? 'not-allowed' : 'pointer',
+                              display:'flex', alignItems:'center', justifyContent:'center', opacity:(sForm.industrialEvaluationCriteria || []).length <= 1 ? 0.45 : 1,
+                            }}
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{display:'flex', gap:'8px', flexWrap:'wrap', alignItems:'flex-end'}}>
+                      <div className="input-group" style={{flex:'2', minWidth:'220px'}}>
+                        <label>New Criterion</label>
+                        <input
+                          type="text"
+                          className="admin-input-select"
+                          placeholder="e.g. Professional conduct"
+                          style={{fontSize:'13px'}}
+                          value={newCriterionLabel}
+                          onChange={e => setNewCriterionLabel(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') addCriterion(); }}
+                        />
+                      </div>
+                      <div className="input-group" style={{width:'140px'}}>
+                        <label>Max Marks</label>
+                        <input
+                          type="number"
+                          min="1"
+                          className="admin-input-select"
+                          value={newCriterionMax}
+                          onChange={e => setNewCriterionMax(Number(e.target.value))}
+                          onKeyDown={e => { if (e.key === 'Enter') addCriterion(); }}
+                        />
+                      </div>
+                      <button className="primary-btn" style={{height:'38px', whiteSpace:'nowrap'}} onClick={addCriterion}>
+                        <PlusCircle size={14} /> Add Criterion
+                      </button>
+                    </div>
+                    <p className="helper-text-sm" style={{marginTop:'10px', color:'#d97706', fontWeight:600, display:'flex', alignItems:'center', gap:'6px'}}><AlertTriangle size={14} /> Click "Save Global Configuration" below to persist changes.</p>
+                  </div>
+
                   <div className="settings-section">
                     <h4 className="settings-title"><MapPin size={18} /> Geofencing Parameters</h4>
                     <div className="input-group">

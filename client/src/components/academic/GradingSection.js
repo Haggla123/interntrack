@@ -343,7 +343,7 @@ const GradingSection = ({ students, setStudents, setActiveTab, onViewLogbook, on
                   const indus = evalModal.grades.find(g => g.type === 'industrial');
                   if (!indus) return <p style={{ textAlign:'center', color:'#94a3b8', padding:'14px', fontSize:'12px' }}>No industrial grade found.</p>;
 
-                  const CRITERIA = [
+                  const legacyCriteria = [
                     { key:'attendance',          label:'Attendance',    max:15 },
                     { key:'punctuality',         label:'Punctuality',   max:15 },
                     { key:'cooperation',         label:'Co-operation',  max:10 },
@@ -352,19 +352,27 @@ const GradingSection = ({ students, setStudents, setActiveTab, onViewLogbook, on
                     { key:'safetyAdherence',     label:'Safety & Env.', max:15 },
                     { key:'workIndependently',   label:'Works Indep.',  max:15 },
                   ].filter(c => indus[c.key] != null);
+                  const criteriaRows = Array.isArray(indus.criteriaScores) && indus.criteriaScores.length
+                    ? indus.criteriaScores.map((c, idx) => ({
+                        key: c.key || `criterion_${idx}`,
+                        label: c.label || c.key || `Criterion ${idx + 1}`,
+                        max: Number(c.max) || 1,
+                        score: Number(c.score) || 0,
+                      }))
+                    : legacyCriteria.map(c => ({ ...c, score: Number(indus[c.key]) || 0 }));
 
                   return (
                     <>
-                      {CRITERIA.length > 0 && (
+                      {criteriaRows.length > 0 && (
                         <div className="eval-grid" style={{ marginBottom:'8px' }}>
-                          {CRITERIA.map(({ key, label, max }) => {
-                            const pct = Math.round((indus[key] / max) * 100);
+                          {criteriaRows.map(({ key, label, max, score }) => {
+                            const pct = Math.round((score / max) * 100);
                             const bar = pct >= 70 ? '#6366f1' : pct >= 50 ? '#f59e0b' : '#ef4444';
                             return (
                               <div key={key} style={{ padding:'6px 8px', background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:'7px' }}>
                                 <div style={{ fontSize:'9px', fontWeight:800, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.3px', marginBottom:'2px' }}>{label}</div>
                                 <div style={{ display:'flex', alignItems:'baseline', gap:'1px', marginBottom:'3px' }}>
-                                  <span style={{ fontSize:'0.95rem', fontWeight:900, color:'#1e293b', fontFamily:'var(--font-mono)' }}>{indus[key]}</span>
+                                  <span style={{ fontSize:'0.95rem', fontWeight:900, color:'#1e293b', fontFamily:'var(--font-mono)' }}>{score}</span>
                                   <span style={{ fontSize:'9px', color:'#94a3b8' }}>/{max}</span>
                                 </div>
                                 <div style={{ height:'3px', background:'#e2e8f0', borderRadius:'2px', overflow:'hidden' }}>

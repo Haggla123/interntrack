@@ -1,6 +1,45 @@
 // Controllers/settingsController.js
 const Settings = require('../models/Settings');
 
+const slugifyCriterionKey = (label, fallbackIndex = 0) => {
+  const base = String(label || '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return base || `criterion_${fallbackIndex + 1}`;
+};
+
+const validateIndustrialEvaluationCriteria = (criteria) => {
+  if (!Array.isArray(criteria) || criteria.length === 0) {
+    throw new Error('At least one industrial evaluation criterion is required.');
+  }
+
+  const seen = new Set();
+  return criteria.map((item, index) => {
+    const label = String(item?.label || '').trim();
+    if (!label) throw new Error('Each industrial evaluation criterion needs a label.');
+
+    const max = Number(item?.max);
+    if (!Number.isFinite(max) || max <= 0) {
+      throw new Error(`"${label}" must have a maximum mark greater than 0.`);
+    }
+
+    let key = String(item?.key || '').trim() || slugifyCriterionKey(label, index);
+    key = key.replace(/[^A-Za-z0-9_]/g, '');
+    if (!key) key = slugifyCriterionKey(label, index);
+
+    const keyLower = key.toLowerCase();
+    if (seen.has(keyLower)) {
+      throw new Error(`Duplicate industrial evaluation criterion: "${label}".`);
+    }
+    seen.add(keyLower);
+
+    return { key, label, max };
+  });
+};
+
 // ── GET /api/settings ────────────────────────────────────────────
 const getSettings = async (req, res) => {
   try {
@@ -20,7 +59,7 @@ const updateSettings = async (req, res) => {
       'weightIndustrial', 'weightAcademic', 'weightLogbook',
       'geofenceEnabled', 'geofenceRadius', 'attendanceMode', 'strictTimeWindow',
       'allowSelfPlacement', 'industrialPortalEnabled',
-      'departments', 'activityCategories',
+      'departments', 'activityCategories', 'industrialEvaluationCriteria',
     ];
 
     const updates = {};
@@ -36,6 +75,10 @@ const updateSettings = async (req, res) => {
       return res.status(400).json({ message: `Grade weights must sum to 100 (currently ${wi + wa + wl}).` });
     }
 
+    if (updates.industrialEvaluationCriteria !== undefined) {
+      updates.industrialEvaluationCriteria = validateIndustrialEvaluationCriteria(updates.industrialEvaluationCriteria);
+    }
+
     const updated = await Settings.findOneAndUpdate(
       {},
       updates,
@@ -44,7 +87,8 @@ const updateSettings = async (req, res) => {
 
     res.status(200).json({ success: true, data: updated });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const status = /criterion|maximum mark|Duplicate/i.test(err.message) ? 400 : 500;
+    res.status(status).json({ message: err.message });
   }
 };
 

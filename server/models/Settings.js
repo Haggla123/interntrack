@@ -1,6 +1,16 @@
 
 const mongoose = require('mongoose');
 
+const DEFAULT_INDUSTRIAL_EVALUATION_CRITERIA = [
+  { key: 'attendance', label: 'Attendance', max: 15 },
+  { key: 'punctuality', label: 'Punctuality', max: 15 },
+  { key: 'cooperation', label: 'Co-operation', max: 10 },
+  { key: 'aptitudeForLearning', label: 'Aptitude for Learning', max: 15 },
+  { key: 'understandingOfJob', label: 'Understanding of Job', max: 15 },
+  { key: 'safetyAdherence', label: 'Adherence to Safety & Environment Rules', max: 15 },
+  { key: 'workIndependently', label: 'Ability to Work Independently', max: 15 },
+];
+
 const SettingsSchema = new mongoose.Schema(
   {
     // ── Internship Season ────────────────────────────────────────
@@ -14,6 +24,16 @@ const SettingsSchema = new mongoose.Schema(
     weightIndustrial:   { type: Number,  default: 40 },
     weightAcademic:     { type: Number,  default: 30 },
     weightLogbook:      { type: Number,  default: 30 },
+
+    industrialEvaluationCriteria: {
+      type: [{
+        key:   { type: String, required: true },
+        label: { type: String, required: true },
+        max:   { type: Number, required: true, min: 1 },
+        _id:   false,
+      }],
+      default: () => DEFAULT_INDUSTRIAL_EVALUATION_CRITERIA.map(c => ({ ...c })),
+    },
 
     // ── Geofencing ───────────────────────────────────────────────
     geofenceEnabled:    { type: Boolean, default: true },  // master switch

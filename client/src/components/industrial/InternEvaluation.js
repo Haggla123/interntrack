@@ -8,7 +8,7 @@ import {
   Award, CheckCircle2, AlertCircle, Loader, Users,
   Clock, Edit3, ChevronRight, RotateCcw,
 } from 'lucide-react';
-import { getStudents, getMyGrades, submitGrade, updateGrade } from '../../api';
+import { getStudents, getMyGrades, getSettings, submitGrade, updateGrade } from '../../api';
 
 // ── Grade helpers ─────────────────────────────────────────────────
 const scoreToGrade = (pct) => {
@@ -37,17 +37,29 @@ const gradeColor = (g) => {
   return '#dc2626';
 };
 
-const CRITERIA = [
-  { name: 'attendance',          label: 'Attendance',                              max: 15 },
-  { name: 'punctuality',         label: 'Punctuality',                             max: 15 },
-  { name: 'cooperation',         label: 'Co-operation',                            max: 10 },
-  { name: 'aptitudeForLearning', label: 'Aptitude for Learning',                   max: 15 },
-  { name: 'understandingOfJob',  label: 'Understanding of Job',                    max: 15 },
-  { name: 'safetyAdherence',     label: 'Adherence to Safety & Environment Rules', max: 15 },
-  { name: 'workIndependently',   label: 'Ability to Work Independently',           max: 15 },
+const DEFAULT_CRITERIA = [
+  { key: 'attendance',          label: 'Attendance',                              max: 15 },
+  { key: 'punctuality',         label: 'Punctuality',                             max: 15 },
+  { key: 'cooperation',         label: 'Co-operation',                            max: 10 },
+  { key: 'aptitudeForLearning', label: 'Aptitude for Learning',                   max: 15 },
+  { key: 'understandingOfJob',  label: 'Understanding of Job',                    max: 15 },
+  { key: 'safetyAdherence',     label: 'Adherence to Safety & Environment Rules', max: 15 },
+  { key: 'workIndependently',   label: 'Ability to Work Independently',           max: 15 },
 ];
 
-const DEFAULT_SCORES = Object.fromEntries(CRITERIA.map(c => [c.name, Math.round(c.max * 0.7)]));
+const normalizeCriteria = (criteria) => {
+  const source = Array.isArray(criteria) && criteria.length ? criteria : DEFAULT_CRITERIA;
+  return source
+    .map((c, index) => ({
+      key: c.key || c.name || `criterion_${index + 1}`,
+      label: c.label || c.key || c.name || `Criterion ${index + 1}`,
+      max: Math.max(1, Number(c.max) || 1),
+    }))
+    .filter(c => c.label.trim());
+};
+
+const buildDefaultScores = (criteria) =>
+  Object.fromEntries(normalizeCriteria(criteria).map(c => [c.key, Math.round(c.max * 0.7)]));
 
 // ── Evaluated card ────────────────────────────────────────────────
 const EvaluatedCard = ({ student, grade, onEdit }) => {
@@ -161,18 +173,32 @@ const PendingCard = ({ student, onStart }) => (
 );
 
 // ── Evaluation form ───────────────────────────────────────────────
-const EvalForm = ({ student, existingGrade, onSubmit, onCancel, submitting, errMsg }) => {
+const EvalForm = ({ student, existingGrade, criteria, onSubmit, onCancel, submitting, errMsg }) => {
+  const formCriteria = normalizeCriteria(
+    existingGrade?.criteriaScores?.length ? existingGrade.criteriaScores : criteria
+  );
   const [scores,   setScores]   = useState(() =>
     existingGrade
       ? Object.fromEntries(
-          CRITERIA.map(c => [c.name, existingGrade[c.name] ?? Math.round(c.max * 0.7)])
+          formCriteria.map(c => {
+            const snap = existingGrade.criteriaScores?.find(item => item.key === c.key);
+            return [c.key, snap?.score ?? existingGrade[c.key] ?? Math.round(c.max * 0.7)];
+          })
         )
-      : DEFAULT_SCORES
+      : buildDefaultScores(formCriteria)
   );
   const [comments, setComments] = useState(existingGrade?.comments || '');
 
-  const total      = CRITERIA.reduce((sum, c) => sum + (scores[c.name] || 0), 0);
+  const totalRaw   = formCriteria.reduce((sum, c) => sum + (Number(scores[c.key]) || 0), 0);
+  const totalMax   = formCriteria.reduce((sum, c) => sum + c.max, 0);
+  const total      = totalMax > 0 ? Math.round((totalRaw / totalMax) * 100) : 0;
   const totalColor = total >= 70 ? '#10b981' : total >= 50 ? '#f59e0b' : '#ef4444';
+  const criteriaScores = formCriteria.map(c => ({
+    key: c.key,
+    label: c.label,
+    max: c.max,
+    score: Number(scores[c.key]) || 0,
+  }));
 
   const setScore = (name, val, max) =>
     setScores(prev => ({ ...prev, [name]: Math.min(max, Math.max(0, Number(val))) }));
@@ -183,15 +209,15 @@ const EvalForm = ({ student, existingGrade, onSubmit, onCancel, submitting, errM
   };
 
   return (
-    <div style={{
+    <div className="industrial-eval-form" style={{
       background: '#fff', border: '1px solid var(--gray-200)',
-      borderRadius: '14px', padding: '24px',
-      boxShadow: '0 4px 24px rgba(3,37,108,0.08)', marginBottom: '16px',
+      borderRadius: '14px', padding: '18px 20px',
+      boxShadow: '0 4px 24px rgba(3,37,108,0.08)', marginBottom: '12px',
     }}>
       {/* Form header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
         <div style={{
-          width: '42px', height: '42px', borderRadius: '50%',
+          width: '38px', height: '38px', borderRadius: '50%',
           background: 'var(--brand-navy)', display: 'flex', alignItems: 'center',
           justifyContent: 'center', fontSize: '16px', fontWeight: 900, color: '#fff', flexShrink: 0,
         }}>
@@ -220,13 +246,18 @@ const EvalForm = ({ student, existingGrade, onSubmit, onCancel, submitting, errM
       )}
 
       {/* Sliders */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
-        {CRITERIA.map(({ name, label, max }) => {
-          const val = scores[name] || 0;
+      <div className="industrial-eval-criteria-grid" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: '12px 18px',
+        marginBottom: '14px',
+      }}>
+        {formCriteria.map(({ key, label, max }) => {
+          const val = scores[key] || 0;
           const color = barColor(val, max);
           return (
-            <div key={name}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <div key={key}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gray-700)' }}>{label}</span>
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '13px', color }}>
                   {val}<span style={{ fontSize: '10px', fontWeight: 400, color: 'var(--gray-400)' }}>/{max}</span>
@@ -235,7 +266,7 @@ const EvalForm = ({ student, existingGrade, onSubmit, onCancel, submitting, errM
               <div style={{ position: 'relative', height: '8px', background: 'var(--gray-200)', borderRadius: '4px' }}>
                 <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${(val/max)*100}%`, background: color, borderRadius: '4px', transition: 'width 0.15s' }} />
                 <input type="range" min={0} max={max} step={1} value={val}
-                  onChange={e => setScore(name, e.target.value, max)}
+                  onChange={e => setScore(key, e.target.value, max)}
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', margin: 0 }} />
               </div>
             </div>
@@ -244,12 +275,13 @@ const EvalForm = ({ student, existingGrade, onSubmit, onCancel, submitting, errM
       </div>
 
       {/* Total */}
-      <div style={{ background: 'var(--gray-50)', border: '1px solid var(--gray-200)', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
+      <div style={{ background: 'var(--gray-50)', border: '1px solid var(--gray-200)', borderRadius: '10px', padding: '11px 14px', marginBottom: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
           <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--gray-600)' }}>Total Score</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 900, fontSize: '20px', color: totalColor }}>{total}</span>
             <span style={{ fontSize: '11px', color: 'var(--gray-400)' }}>/ 100</span>
+            <span style={{ fontSize: '11px', color: 'var(--gray-400)' }}>({totalRaw}/{totalMax})</span>
             <span style={{
               padding: '2px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 800,
               background: total >= 70 ? '#ecfdf5' : total >= 50 ? '#fffbeb' : '#fef2f2',
@@ -266,19 +298,19 @@ const EvalForm = ({ student, existingGrade, onSubmit, onCancel, submitting, errM
       </div>
 
       {/* Comments */}
-      <div style={{ marginBottom: '16px' }}>
+      <div style={{ marginBottom: '12px' }}>
         <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--gray-600)', display: 'block', marginBottom: '6px' }}>Comments (optional)</label>
-        <textarea className="corporate-textarea" rows={2}
+        <textarea className="corporate-textarea" rows={1}
           placeholder="Additional observations…"
           value={comments} onChange={e => setComments(e.target.value)}
           style={{ fontSize: '13px' }} />
       </div>
 
       <button
-        onClick={() => onSubmit(scores, comments, total)}
+        onClick={() => onSubmit(criteriaScores, comments, total)}
         disabled={submitting}
         style={{
-          width: '100%', padding: '11px', border: 'none', borderRadius: '9px',
+          width: '100%', padding: '10px', border: 'none', borderRadius: '9px',
           background: 'var(--brand-navy)', color: '#fff', fontWeight: 700, fontSize: '14px',
           cursor: submitting ? 'not-allowed' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
@@ -304,13 +336,16 @@ const InternEvaluation = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errMsg,     setErrMsg]     = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [criteria,   setCriteria]   = useState(DEFAULT_CRITERIA);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [sRes, gRes] = await Promise.all([getStudents(), getMyGrades()]);
+      const [sRes, gRes, settingsRes] = await Promise.all([getStudents(), getMyGrades(), getSettings()]);
       const toArr = r => Array.isArray(r) ? r : Array.isArray(r?.data) ? r.data : [];
+      const settings = settingsRes?.data || settingsRes || {};
       setStudents(toArr(sRes));
+      setCriteria(normalizeCriteria(settings.industrialEvaluationCriteria));
       // Only keep industrial type grades submitted by this user
       setMyGrades(toArr(gRes).filter(g => g.type === 'industrial'));
     } catch { /* silent */ }
@@ -331,7 +366,7 @@ const InternEvaluation = () => {
   const handleEdit   = (student, grade) => { setEditing({ student, grade });       setErrMsg(''); };
   const handleCancel = ()               => { setEditing(null); setErrMsg(''); };
 
-  const handleSubmit = async (scores, comments, pct) => {
+  const handleSubmit = async (criteriaScores, comments, pct) => {
     setSubmitting(true);
     setErrMsg('');
     const { student, grade: existingGrade } = editing;
@@ -340,16 +375,7 @@ const InternEvaluation = () => {
       // store the raw 100-point total score
       score:    pct,
       comments: comments.trim(),
-      // store all 7 UENR criteria as their actual raw marks
-      // (e.g. attendance out of 15, cooperation out of 10, etc.)
-      
-      attendance:          scores.attendance,
-      punctuality:         scores.punctuality,
-      cooperation:         scores.cooperation,
-      aptitudeForLearning: scores.aptitudeForLearning,
-      understandingOfJob:  scores.understandingOfJob,
-      safetyAdherence:     scores.safetyAdherence,
-      workIndependently:   scores.workIndependently,
+      criteriaScores,
     };
     try {
       if (existingGrade) {
@@ -393,23 +419,23 @@ const InternEvaluation = () => {
   );
 
   return (
-    <div style={{ maxWidth: '740px', margin: '0 auto' }} className="fade-in">
+    <div style={{ maxWidth: '1080px', width: '100%', margin: '0 auto' }} className="fade-in industrial-evaluation-shell">
 
       {/* Banner */}
-      <div className="bento-item welcome-box hero-gradient" style={{ marginBottom: '20px', padding: '22px 28px' }}>
+      <div className="bento-item welcome-box hero-gradient" style={{ marginBottom: '14px', padding: '18px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
           <Award size={17} style={{ opacity: 0.8 }} />
           <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Industrial Evaluation</span>
         </div>
-        <h2 style={{ color: '#fff', margin: '0 0 5px', fontSize: '1.35rem', fontWeight: 800 }}>UENR Internship Assessment</h2>
+        <h2 style={{ color: '#fff', margin: '0 0 4px', fontSize: '1.25rem', fontWeight: 800 }}>UENR Internship Assessment</h2>
         <p style={{ color: 'rgba(255,255,255,0.72)', margin: 0, fontSize: '13px' }}>
-          Evaluate intern performance across 7 official UENR criteria (100 marks total)
+          Evaluate intern performance across {criteria.length} configured criteria (normalized to 100 marks)
         </p>
       </div>
 
       {/* Stats row */}
       {!loading && (
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
           {[
             { label: 'Total',     value: students.length,       bg: '#eff6ff', color: '#1d4ed8' },
             { label: 'Evaluated', value: evaluated.length,      bg: '#f0fdf4', color: '#15803d' },
@@ -438,6 +464,7 @@ const InternEvaluation = () => {
         <EvalForm
           student={editing.student}
           existingGrade={editing.grade}
+          criteria={criteria}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           submitting={submitting}

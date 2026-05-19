@@ -22,7 +22,7 @@ const GradeSchema = new mongoose.Schema(
     },
     grade: {
       type: String,
-      enum: ['A', 'B+', 'B', 'C+', 'C', 'D', 'F'],
+      enum: ['A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'F'],
       required: [true, 'Grade is required'],
     },
 
@@ -38,6 +38,16 @@ const GradeSchema = new mongoose.Schema(
       type: String,
       default: '',
       trim: true,
+    },
+    criteriaScores: {
+      type: [{
+        key:   { type: String, required: true },
+        label: { type: String, required: true },
+        max:   { type: Number, required: true, min: 1 },
+        score: { type: Number, required: true, min: 0 },
+        _id:   false,
+      }],
+      default: [],
     },
     // ── Breakdown scores — 7 official UENR criteria (each /15 or /10) ────
     // Stored as the raw mark out of the criterion's maximum,

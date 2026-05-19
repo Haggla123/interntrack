@@ -1,13 +1,89 @@
 // Controllers/gradeController.js
 const Grade = require('../models/Grade');
 const User  = require('../models/User');
+const Settings = require('../models/Settings');
 const { canAccessStudent, requireStudentAccess } = require('../utils/accessControl');
+
+const LEGACY_CRITERIA = [
+  { key: 'attendance', label: 'Attendance', max: 15 },
+  { key: 'punctuality', label: 'Punctuality', max: 15 },
+  { key: 'cooperation', label: 'Co-operation', max: 10 },
+  { key: 'aptitudeForLearning', label: 'Aptitude for Learning', max: 15 },
+  { key: 'understandingOfJob', label: 'Understanding of Job', max: 15 },
+  { key: 'safetyAdherence', label: 'Adherence to Safety & Environment Rules', max: 15 },
+  { key: 'workIndependently', label: 'Ability to Work Independently', max: 15 },
+];
+
+const scoreToGrade = (pct) => {
+  if (pct >= 80) return 'A';
+  if (pct >= 75) return 'B+';
+  if (pct >= 70) return 'B';
+  if (pct >= 65) return 'C+';
+  if (pct >= 60) return 'C';
+  if (pct >= 55) return 'D+';
+  if (pct >= 45) return 'D';
+  return 'F';
+};
+
+const scoreLegacyFields = (body) => Object.fromEntries(
+  LEGACY_CRITERIA.map(c => [c.key, body[c.key] ?? null])
+);
+
+const buildLegacyCriteriaScores = (body) => {
+  const scores = [];
+  for (const criterion of LEGACY_CRITERIA) {
+    if (body[criterion.key] !== undefined && body[criterion.key] !== null) {
+      scores.push({
+        ...criterion,
+        score: Number(body[criterion.key]),
+      });
+    }
+  }
+  return scores;
+};
+
+const normalizeCriteriaScores = (submitted, rubric) => {
+  if (!Array.isArray(submitted) || submitted.length === 0) {
+    throw new Error('criteriaScores is required for industrial evaluations.');
+  }
+  if (!Array.isArray(rubric) || rubric.length === 0) {
+    throw new Error('Industrial evaluation criteria are not configured.');
+  }
+
+  const byKey = new Map(submitted.map(item => [String(item?.key || ''), item]));
+  const normalized = rubric.map(criterion => {
+    const item = byKey.get(criterion.key);
+    if (!item) {
+      throw new Error(`Missing score for "${criterion.label}".`);
+    }
+
+    const score = Number(item.score);
+    const max = Number(criterion.max);
+    if (!Number.isFinite(score) || score < 0 || score > max) {
+      throw new Error(`Score for "${criterion.label}" must be between 0 and ${max}.`);
+    }
+
+    return {
+      key: criterion.key,
+      label: criterion.label,
+      max,
+      score,
+    };
+  });
+
+  const totalMax = normalized.reduce((sum, item) => sum + item.max, 0);
+  const totalScore = normalized.reduce((sum, item) => sum + item.score, 0);
+  const percent = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
+
+  return { criteriaScores: normalized, score: percent, grade: scoreToGrade(percent) };
+};
 
 // ── POST /api/grades ─────────────────────────────────────────────
 const submitGrade = async (req, res) => {
   try {
     const {
       studentId, grade, score, comments, type,
+      criteriaScores,
       // All 7 UENR criteria stored as raw marks
       attendance, punctuality, cooperation,
       aptitudeForLearning, understandingOfJob,
@@ -42,22 +118,44 @@ const submitGrade = async (req, res) => {
       }
     }
 
+    const legacyScores = scoreLegacyFields({
+      attendance, punctuality, cooperation,
+      aptitudeForLearning, understandingOfJob,
+      safetyAdherence, workIndependently,
+    });
+    let industrialEvaluation = null;
+    if (gradeType === 'industrial') {
+      const settings = await Settings.getOrCreate();
+      const submittedCriteria = Array.isArray(criteriaScores) && criteriaScores.length
+        ? criteriaScores
+        : buildLegacyCriteriaScores({
+            attendance, punctuality, cooperation,
+            aptitudeForLearning, understandingOfJob,
+            safetyAdherence, workIndependently,
+          });
+      industrialEvaluation = normalizeCriteriaScores(
+        submittedCriteria,
+        settings.industrialEvaluationCriteria
+      );
+    }
+
     const record = await Grade.findOneAndUpdate(
       { student: studentId, type: gradeType },
       {
         student:      studentId,
         submittedBy:  req.user._id,
         type:         gradeType,
-        grade,
-        score:              score             ?? null,
+        grade:        industrialEvaluation?.grade ?? grade,
+        score:        industrialEvaluation?.score ?? score ?? null,
         comments:           comments          || '',
-        attendance:         attendance        ?? null,
-        punctuality:        punctuality       ?? null,
-        cooperation:        cooperation       ?? null,
-        aptitudeForLearning: aptitudeForLearning ?? null,
-        understandingOfJob:  understandingOfJob  ?? null,
-        safetyAdherence:    safetyAdherence   ?? null,
-        workIndependently:  workIndependently  ?? null,
+        criteriaScores:     industrialEvaluation?.criteriaScores ?? [],
+        attendance:         legacyScores.attendance,
+        punctuality:        legacyScores.punctuality,
+        cooperation:        legacyScores.cooperation,
+        aptitudeForLearning: legacyScores.aptitudeForLearning,
+        understandingOfJob:  legacyScores.understandingOfJob,
+        safetyAdherence:    legacyScores.safetyAdherence,
+        workIndependently:  legacyScores.workIndependently,
       },
       { new: true, upsert: true, runValidators: true }
     );
@@ -74,7 +172,8 @@ const submitGrade = async (req, res) => {
 
     res.status(200).json({ success: true, data: record });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const status = /criteria|score|Missing/i.test(err.message) ? 400 : 500;
+    res.status(status).json({ message: err.message });
   }
 };
 
@@ -82,7 +181,7 @@ const submitGrade = async (req, res) => {
 const updateGrade = async (req, res) => {
   try {
     const {
-      grade, score, comments,
+      grade, score, comments, criteriaScores,
       attendance, punctuality, cooperation,
       aptitudeForLearning, understandingOfJob,
       safetyAdherence, workIndependently,
@@ -95,8 +194,18 @@ const updateGrade = async (req, res) => {
       return res.status(403).json({ message: 'Access denied.' });
     }
 
-    if (grade               !== undefined) record.grade = grade;
-    if (score               !== undefined) record.score = score;
+    if (record.type === 'industrial' && criteriaScores !== undefined) {
+      const rubric = record.criteriaScores?.length
+        ? record.criteriaScores
+        : (await Settings.getOrCreate()).industrialEvaluationCriteria;
+      const industrialEvaluation = normalizeCriteriaScores(criteriaScores, rubric);
+      record.criteriaScores = industrialEvaluation.criteriaScores;
+      record.score = industrialEvaluation.score;
+      record.grade = industrialEvaluation.grade;
+    } else {
+      if (grade               !== undefined) record.grade = grade;
+      if (score               !== undefined) record.score = score;
+    }
     if (comments            !== undefined) record.comments = comments;
     if (attendance          !== undefined) record.attendance = attendance;
     if (punctuality         !== undefined) record.punctuality = punctuality;
@@ -110,7 +219,7 @@ const updateGrade = async (req, res) => {
 
     // Same rule — only sync finalGrade for academic/report types
     if (grade && (record.type === 'academic' || record.type === 'report')) {
-      await User.findByIdAndUpdate(record.student, {
+      await User.findByIdAndUpdate(record.student?._id || record.student, {
         finalGrade:  grade,
         gradeStatus: 'Graded',
       });
@@ -118,7 +227,8 @@ const updateGrade = async (req, res) => {
 
     res.status(200).json({ success: true, data: record });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const status = /criteria|score|Missing/i.test(err.message) ? 400 : 500;
+    res.status(status).json({ message: err.message });
   }
 };
 
