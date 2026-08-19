@@ -100,32 +100,22 @@ to protected endpoints.
 ![Logbook and Assessment](screenshots/logbook.png)
 
 ## System Architecture
+InternTrack follows a client-server architecture consisting of a React
+frontend, Node.js/Express backend, and MongoDB database.
 
-InternTrack follows a client-server architecture:
+![InternTrack System Architecture](docs/architecture.png)
 
-Frontend
-→ React
-
-Backend
-→ Node.js / Express
-
-Database
-→ MongoDB
-
-Communication
-→ REST API
-
-Authentication
-→ JWT
+The system supports multiple user roles and uses JWT-based
+authentication and role-based access control to protect backend
+resources.
 
 ## Technology Stack
-
 ### Frontend
 - React
 - JavaScript
 - HTML
 - CSS
-
+- 
 ### Backend
 - Node.js
 - Express.js
