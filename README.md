@@ -64,8 +64,7 @@ staff, industrial supervisors, and administrators.
 - Manage placements
 - Manage system information
 
-## Authentication & Access Control
-## 🔐 Security & Access Control
+## Security & Access Control
 Security is incorporated into InternTrack through authentication
 and role-based authorization.
 
