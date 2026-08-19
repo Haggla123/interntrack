@@ -73,6 +73,32 @@ JSON Web Tokens (JWT) are used for authentication, while middleware
 is used to verify authenticated users and enforce role-based access
 to protected endpoints.
 
+## 📸 Screenshots
+
+### Login
+
+![InternTrack Login](screenshots/login.png)
+
+### Student Dashboard
+
+![Student Dashboard](screenshots/student-dashboard.png)
+
+### Administrator Dashboard
+
+![Administrator Dashboard](screenshots/admin-dashboard.png)
+
+### Supervisor Dashboard
+
+![Supervisor Dashboard](screenshots/supervisor-dashboard.png)
+
+### Placement Management
+
+![Placement Management](screenshots/placement-management.png)
+
+### Logbook & Assessment
+
+![Logbook and Assessment](screenshots/logbook-assessment.png)
+
 ## System Architecture
 
 InternTrack follows a client-server architecture:
@@ -115,6 +141,26 @@ Authentication
 - Git
 - GitHub
 - VS Code
+
+## Getting Started.. Clone the repository
+git clone https://github.com/Haggla123/interntrack.git
+cd interntrack
+
+## Install dependencies
+Frontend:
+cd client
+npm install
+
+## Backend:
+cd ../server
+npm install
+
+## Future Improvements
+- Improved notification system
+- More detailed analytics and reporting
+- Enhanced security testing
+- Automated testing
+- Expanded monitoring and progress tracking
 
 ## Project Structure
 
