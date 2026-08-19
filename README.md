@@ -97,7 +97,7 @@ to protected endpoints.
 
 ### Logbook & Assessment
 
-![Logbook and Assessment](screenshots/logbook-assessment.png)
+![Logbook and Assessment](screenshots/logbook.png)
 
 ## System Architecture
 
