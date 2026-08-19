@@ -65,13 +65,46 @@ staff, industrial supervisors, and administrators.
 - Manage system information
 
 ## Authentication & Access Control
+## 🔐 Security & Access Control
+Security is incorporated into InternTrack through authentication
+and role-based authorization.
 
-The backend implements authentication and role-based authorization
-to control access to protected resources.
+### Authentication
+The backend uses JSON Web Tokens (JWT) to authenticate users and
+protect access to authenticated resources.
+The authentication process includes:
 
-JSON Web Tokens (JWT) are used for authentication, while middleware
-is used to verify authenticated users and enforce role-based access
-to protected endpoints.
+1. User login
+2. Credential validation
+3. JWT token generation
+4. Token verification on protected requests
+5. Access to authorized resources
+
+### Role-Based Access Control
+InternTrack uses role-based access control to ensure that users can
+only access functionality appropriate to their assigned role.
+The system supports four primary roles:
+
+- Student
+- Academic Supervisor
+- Industrial Supervisor
+- Administrator
+
+Protected backend routes use authentication and authorization
+middleware to control access to resources.
+
+### Security Considerations
+The project is designed with the following security considerations:
+
+- JWT-based authentication
+- Role-based authorization
+- Protected API endpoints
+- Server-side validation
+- Separation of frontend and backend responsibilities
+- Environment variables for sensitive configuration
+
+Sensitive credentials and secrets should not be committed to the
+repository.
 
 ## 📸 Screenshots
 
@@ -108,6 +141,17 @@ frontend, Node.js/Express backend, and MongoDB database.
 The system supports multiple user roles and uses JWT-based
 authentication and role-based access control to protect backend
 resources.
+### Request Flow
+A typical authenticated request follows this flow:
+User
+→ React Frontend
+→ REST API
+→ JWT Authentication
+→ Role-Based Authorization
+→ Controller / Business Logic
+→ MongoDB
+→ Response
+→ React Frontend
 
 ## Technology Stack
 ### Frontend
