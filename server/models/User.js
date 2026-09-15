@@ -29,6 +29,7 @@ const userSchema = new mongoose.Schema({
   // References set once placement is approved
   companyName:        { type: String,                                         default: '' },
   companyId:          { type: mongoose.Schema.Types.ObjectId, ref: 'Company', default: null },
+  companyDepartment:  { type: String,                                         default: '', trim: true },
   academicSupervisor: { type: mongoose.Schema.Types.ObjectId, ref: 'User',    default: null },
   industrialSupervisor: { type: mongoose.Schema.Types.ObjectId, ref: 'User',  default: null },
 

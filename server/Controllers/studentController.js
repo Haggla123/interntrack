@@ -2,14 +2,20 @@
 const User   = require('../models/User');
 const Grade  = require('../models/Grade');
 const Company = require('../models/Company');
+const Log = require('../models/Log');
+const Document = require('../models/Document');
 const crypto = require('crypto');
 const { canAccessStudent } = require('../utils/accessControl');
-const { getPlacementProgress } = require('../utils/placementProgress');
+const { getMilestoneProgress } = require('../utils/placementProgress');
 
 const makeTempPassword = () =>
   'UENR-' + crypto.randomBytes(6).toString('base64url').slice(0, 8);
 
 const sendEmail = async (to, subject, html) => {
+  if (!process.env.BREVO_API_KEY || !process.env.MAIL_ADDRESS) {
+    throw new Error('Brevo email settings are missing. Set BREVO_API_KEY and MAIL_ADDRESS in server/.env.');
+  }
+
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', 'api-key': process.env.BREVO_API_KEY },
@@ -63,9 +69,11 @@ const getStudents = async (req, res) => {
       filter.industrialSupervisor = req.user._id;
 
     } else if (req.user.role === 'company_manager') {
-      // Company managers see all students placed at their company
+      // The generic student list powers direct-supervision screens. Company
+      // managers use /api/cm/interns for full company oversight.
       if (req.user.companyId) {
         filter.companyId = req.user.companyId;
+        filter.industrialSupervisor = req.user._id;
       } else {
         return res.status(200).json({ success: true, data: [] });
       }
@@ -113,13 +121,13 @@ const getStudentStats = async (req, res) => {
         role: 'student',
         isActive: true,
         academicSupervisor: req.user._id,
-      }).select('_id placementStatus placementStartDate createdAt updatedAt');
+      }).select('_id placementStatus placementStartDate industrialSupervisor createdAt updatedAt');
     } else {
       allowedStudents = await User.find({
         _id: { $in: ids },
         role: 'student',
         isActive: true,
-      }).select('_id placementStatus placementStartDate createdAt updatedAt');
+      }).select('_id placementStatus placementStartDate industrialSupervisor createdAt updatedAt');
     }
 
     const allowedIds = allowedStudents.map(s => s._id);
@@ -128,13 +136,29 @@ const getStudentStats = async (req, res) => {
       return res.status(200).json({ success: true, data: {} });
     }
 
-    const gradeAgg = await Grade.aggregate([
-      { $match: { student: { $in: allowedIds } } },
-      { $sort: { updatedAt: -1 } },
-      { $group: {
-        _id: '$student',
-        grades: { $push: { type: '$type', grade: '$grade', score: '$score', _id: '$_id' } },
-      }},
+    const [gradeAgg, logAgg, finalReportAgg] = await Promise.all([
+      Grade.aggregate([
+        { $match: { student: { $in: allowedIds } } },
+        { $sort: { updatedAt: -1 } },
+        { $group: {
+          _id: '$student',
+          grades: { $push: { type: '$type', grade: '$grade', score: '$score', _id: '$_id' } },
+        }},
+      ]),
+      Log.aggregate([
+        { $match: { student: { $in: allowedIds } } },
+        { $group: {
+          _id: '$student',
+          submittedLogs: { $sum: 1 },
+          approvedLogs: {
+            $sum: { $cond: [{ $eq: ['$status', 'Approved'] }, 1, 0] },
+          },
+        }},
+      ]),
+      Document.aggregate([
+        { $match: { student: { $in: allowedIds }, type: 'final-report' } },
+        { $group: { _id: '$student', count: { $sum: 1 } } },
+      ]),
     ]);
 
     const gradeMap = {};
@@ -143,20 +167,36 @@ const getStudentStats = async (req, res) => {
       const acad  = g.grades.find(x => x.type === 'academic' || x.type === 'report');
       gradeMap[g._id.toString()] = {
         indusScore: indus?.score || 0,
+        hasIndustrialEvaluation: Boolean(indus),
         gradeId:    acad?._id   || null,
         finalGrade: acad?.grade || '-',
       };
     });
+    const logMap = {};
+    logAgg.forEach(row => {
+      logMap[row._id.toString()] = {
+        submittedLogs: row.submittedLogs || 0,
+        approvedLogs: row.approvedLogs || 0,
+      };
+    });
+    const finalReportSet = new Set(finalReportAgg.map(row => row._id.toString()));
 
     const stats = {};
     allowedStudents.forEach(student => {
       const sid = student._id.toString();
-      const placement = getPlacementProgress(student, totalWeeks);
       const g = gradeMap[sid] || {};
+      const placement = getMilestoneProgress(student, totalWeeks, {
+        ...(logMap[sid] || {}),
+        hasIndustrialEvaluation: Boolean(g.hasIndustrialEvaluation),
+        hasFinalReport: finalReportSet.has(sid),
+      });
       stats[sid] = {
         elapsedDays: placement.elapsedDays,
         weeks: placement.weeks,
         currentWeek: placement.currentWeek,
+        submittedLogs: placement.submittedLogs,
+        approvedLogs: placement.approvedLogs,
+        targetLogs: placement.targetLogs,
         progress: placement.progress,
         indusScore: g.indusScore || 0,
         gradeId:    g.gradeId   || null,

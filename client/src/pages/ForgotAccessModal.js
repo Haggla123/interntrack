@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Send, Mail, ShieldAlert, Inbox } from 'lucide-react';
 import { forgotPassword } from '../api';
 
-const ForgotAccessModal = ({ isOpen, onClose, currentRole }) => {
+const ForgotAccessModal = ({ isOpen, onClose }) => {
   const [email,   setEmail]   = useState('');
   const [isSent,  setIsSent]  = useState(false);
   const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ const ForgotAccessModal = ({ isOpen, onClose, currentRole }) => {
     setLoading(true);
     setError('');
     try {
-      await forgotPassword({ email, role: currentRole });
+      await forgotPassword({ email });
       setIsSent(true);
     } catch (err) {
       setError(err.message);
@@ -42,7 +42,7 @@ const ForgotAccessModal = ({ isOpen, onClose, currentRole }) => {
               </div>
               <h3>Recover Access</h3>
               <p className="sub-text-sm">
-                Enter your registered email to receive a temporary password for the <strong>{currentRole}</strong> portal.
+                Enter your registered email to receive a temporary password.
               </p>
             </div>
 
@@ -89,4 +89,3 @@ const ForgotAccessModal = ({ isOpen, onClose, currentRole }) => {
 };
 
 export default ForgotAccessModal;
-

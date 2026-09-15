@@ -1,7 +1,6 @@
 // Controllers/logController.js
 const Log      = require('../models/Log');
 const Settings = require('../models/Settings');
-const Company  = require('../models/Company');
 const { canAccessStudent, requireStudentAccess } = require('../utils/accessControl');
 const { getPlacementWeekNumber } = require('../utils/placementProgress');
 
@@ -42,16 +41,7 @@ const submitLog = async (req, res) => {
       return res.status(403).json({ message: 'You must be placed at a company before submitting log entries.' });
     }
 
-    let hasIndustrialContact = Boolean(req.user.industrialSupervisor);
-    if (!hasIndustrialContact && req.user.companyId) {
-      const company = await Company.findById(req.user.companyId)
-        .select('manager supervisorName supervisorEmail');
-      hasIndustrialContact = Boolean(
-        company?.manager || company?.supervisorName || company?.supervisorEmail
-      );
-    }
-
-    if (!req.user.academicSupervisor || !hasIndustrialContact) {
+    if (!req.user.academicSupervisor || !req.user.industrialSupervisor) {
       return res.status(403).json({
         message: 'Your academic supervisor and industrial supervisor must be assigned before you can submit log entries.',
       });
@@ -171,7 +161,18 @@ const getPendingLogs = async (req, res) => {
       filter.student = { $in: myStudents.map(s => s._id) };
     } else if (req.user.role === 'company_manager') {
       if (req.user.companyId) {
-        filter.company = req.user.companyId;
+        const User = require('../models/User');
+        const myStudents = await User.find({
+          role: 'student',
+          companyId: req.user.companyId,
+          industrialSupervisor: req.user._id,
+          isActive: true,
+        }).select('_id');
+
+        if (myStudents.length === 0) {
+          return res.status(200).json({ success: true, data: [] });
+        }
+        filter.student = { $in: myStudents.map(s => s._id) };
       } else {
         return res.status(200).json({ success: true, data: [] });
       }
@@ -216,6 +217,13 @@ const approveLog = async (req, res) => {
     if (!canAccessStudent(req.user, log.student)) {
       return res.status(403).json({ message: 'Access denied.' });
     }
+    if (
+      req.user.role === 'company_manager' &&
+      (!log.student.industrialSupervisor ||
+        log.student.industrialSupervisor.toString() !== req.user._id.toString())
+    ) {
+      return res.status(403).json({ message: 'You can only approve logs for interns assigned to you.' });
+    }
 
     log.status = 'Approved';
     log.supervisorNote = req.body.note || '';
@@ -233,6 +241,13 @@ const rejectLog = async (req, res) => {
     if (!log) return res.status(404).json({ message: 'Log not found.' });
     if (!canAccessStudent(req.user, log.student)) {
       return res.status(403).json({ message: 'Access denied.' });
+    }
+    if (
+      req.user.role === 'company_manager' &&
+      (!log.student.industrialSupervisor ||
+        log.student.industrialSupervisor.toString() !== req.user._id.toString())
+    ) {
+      return res.status(403).json({ message: 'You can only reject logs for interns assigned to you.' });
     }
 
     log.status = 'Rejected';

@@ -42,8 +42,35 @@ const getPlacementProgress = (student, totalWeeks = 6, now = new Date()) => {
   };
 };
 
+const getMilestoneProgress = (student, totalWeeks = 6, signals = {}, now = new Date()) => {
+  const safeTotalWeeks = Math.max(1, Number(totalWeeks) || 6);
+  const targetLogs = safeTotalWeeks * 7;
+  const submittedLogs = Math.max(0, Number(signals.submittedLogs) || 0);
+  const approvedLogs = Math.max(0, Number(signals.approvedLogs) || 0);
+  const submittedRatio = targetLogs > 0 ? Math.min(submittedLogs / targetLogs, 1) : 0;
+  const approvedRatio = targetLogs > 0 ? Math.min(approvedLogs / targetLogs, 1) : 0;
+
+  const score =
+    (student?.placementStatus === 'Active' || student?.placementStatus === 'Completed' ? 20 : 0) +
+    (student?.industrialSupervisor ? 10 : 0) +
+    (submittedRatio * 25) +
+    (approvedRatio * 20) +
+    (signals.hasIndustrialEvaluation ? 15 : 0) +
+    (signals.hasFinalReport ? 10 : 0);
+
+  const calendar = getPlacementProgress(student, safeTotalWeeks, now);
+  return {
+    ...calendar,
+    submittedLogs,
+    approvedLogs,
+    targetLogs,
+    progress: Math.min(100, Math.round(score)),
+  };
+};
+
 module.exports = {
   getElapsedPlacementDays,
   getPlacementWeekNumber,
   getPlacementProgress,
+  getMilestoneProgress,
 };

@@ -57,6 +57,24 @@ const getCalendarProgress = (placementStartDate, totalWeeks = 6) => {
   return { completedWeeks, currentWeek, elapsedDays, totalWeeks: safeTotalWeeks };
 };
 
+const getLogProgress = (logs = [], totalWeeks = 6) => {
+  const safeTotalWeeks = Math.max(1, Number(totalWeeks) || 6);
+  const totalLogs = Array.isArray(logs) ? logs.length : 0;
+  const targetLogs = safeTotalWeeks * 7;
+  const completedWeekUnits = Math.min(totalLogs / 7, safeTotalWeeks);
+  const completedWeeks = Math.min(Math.floor(totalLogs / 7), safeTotalWeeks);
+  const progressPercent = targetLogs > 0
+    ? Math.min(Math.round((totalLogs / targetLogs) * 100), 100)
+    : 0;
+
+  return { completedWeeks, completedWeekUnits, progressPercent, targetLogs, totalLogs, totalWeeks: safeTotalWeeks };
+};
+
+const formatCompletedWeeks = (value = 0) => {
+  if (Number.isInteger(value)) return String(value);
+  return value.toFixed(1).replace(/\.0$/, '');
+};
+
 const isStudentPlaced = (user, savedPlacement = null) => {
   if (!user && !savedPlacement) return false;
   if (savedPlacement) return true;
@@ -91,7 +109,7 @@ const StudentDashboard = () => {
   const [geofenceEnabled, setGeofenceEnabled] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [placement, setPlacement] = useState(() => getPlacement(user?._id));
-  const [logStats, setLogStats] = useState({ completedWeeks: 0, totalWeeks: 6, totalLogs: 0 });
+  const [logStats, setLogStats] = useState({ completedWeeks: 0, progressPercent: 0, targetLogs: 42, totalWeeks: 6, totalLogs: 0 });
   const [systemTotalWeeks, setSystemTotalWeeks] = useState(6);
   const [settings, setSettings] = useState(null);
   const [tabLoading, setTabLoading] = useState(false);
@@ -149,32 +167,34 @@ const StudentDashboard = () => {
     }
   }, [isPlaced, activeTab]);
 
-  // Load log totals; placement progress itself is calendar-based from placementStartDate.
+  const applyLogStats = useCallback((logs, totalWeeks = systemTotalWeeks) => {
+    const calendar = getCalendarProgress(user?.placementStartDate || placementDetails?.placementStartDate, totalWeeks);
+    const progress = getLogProgress(logs, totalWeeks);
+    setLogStats({
+      ...progress,
+      currentWeek: calendar.currentWeek,
+      elapsedDays: calendar.elapsedDays,
+    });
+  }, [systemTotalWeeks, user?.placementStartDate, placementDetails?.placementStartDate]);
+
+  // Load log totals; each submitted daily log moves progress toward the placement target.
   useEffect(() => {
     if (!isPlaced) return;
     getMyLogs()
       .then(res => {
         const logs = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : [];
-        const calendar = getCalendarProgress(user?.placementStartDate || placementDetails?.placementStartDate, systemTotalWeeks);
-        setLogStats({
-          completedWeeks: calendar.completedWeeks,
-          currentWeek: calendar.currentWeek,
-          elapsedDays: calendar.elapsedDays,
-          totalWeeks: calendar.totalWeeks,
-          totalLogs: logs.length,
-        });
+        applyLogStats(logs);
       })
       .catch(() => {
         const calendar = getCalendarProgress(user?.placementStartDate || placementDetails?.placementStartDate, systemTotalWeeks);
         setLogStats(prev => ({
           ...prev,
-          completedWeeks: calendar.completedWeeks,
           currentWeek: calendar.currentWeek,
           elapsedDays: calendar.elapsedDays,
           totalWeeks: calendar.totalWeeks,
         }));
       });
-  }, [isPlaced, systemTotalWeeks, user?.placementStartDate, placementDetails?.placementStartDate]);
+  }, [isPlaced, systemTotalWeeks, user?.placementStartDate, placementDetails?.placementStartDate, applyLogStats]);
 
   const refreshStudentTabData = useCallback(async () => {
     await Promise.allSettled([
@@ -187,18 +207,11 @@ const StudentDashboard = () => {
       }),
       isPlaced ? getMyLogs().then(res => {
         const logs = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : [];
-        const calendar = getCalendarProgress(user?.placementStartDate || placementDetails?.placementStartDate, systemTotalWeeks);
-        setLogStats({
-          completedWeeks: calendar.completedWeeks,
-          currentWeek: calendar.currentWeek,
-          elapsedDays: calendar.elapsedDays,
-          totalWeeks: calendar.totalWeeks,
-          totalLogs: logs.length,
-        });
+        applyLogStats(logs);
       }) : Promise.resolve(),
       new Promise(resolve => setTimeout(resolve, 250)),
     ]);
-  }, [isPlaced, refreshUser, systemTotalWeeks, user?.placementStartDate, placementDetails?.placementStartDate]);
+  }, [applyLogStats, isPlaced, refreshUser]);
 
   const studentInfo = {
     name: user?.name || 'Student',
@@ -208,7 +221,16 @@ const StudentDashboard = () => {
     elapsedDays: logStats.elapsedDays || 0,
     totalWeeks: logStats.totalWeeks,
     totalLogs: logStats.totalLogs,
+    targetLogs: logStats.targetLogs,
+    progressPercent: logStats.progressPercent,
+    completedWeekUnits: logStats.completedWeekUnits || 0,
   };
+
+  const refreshLogProgress = useCallback(async () => {
+    const res = await getMyLogs();
+    const logs = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : [];
+    applyLogStats(logs);
+  }, [applyLogStats]);
 
   // Use AuthContext logout — clears token, user, studentPlacement, redirects
   const handleLogout = () => logout();
@@ -249,13 +271,8 @@ const StudentDashboard = () => {
     : { lat: 0, lon: 0, radius: 150 };
 
   const hasAcademicSupervisor = Boolean(user?.academicSupervisor);
-  const hasIndustrialContact = Boolean(
-    user?.industrialSupervisor ||
-    placementDetails?.supervisorName ||
-    placementDetails?.supervisorEmail ||
-    user?.companyId?.manager
-  );
-  const canSubmitLogs = hasAcademicSupervisor && hasIndustrialContact;
+  const hasIndustrialSupervisor = Boolean(user?.industrialSupervisor);
+  const canSubmitLogs = hasAcademicSupervisor && hasIndustrialSupervisor;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -294,6 +311,7 @@ const StudentDashboard = () => {
             <LogEntryForm
               isLocationVerified={!geofenceEnabled || companyLocation.lat === 0 || isVerified}
               canSubmitLogs={canSubmitLogs}
+              onSubmitted={refreshLogProgress}
             />
           </>
         );
@@ -314,11 +332,18 @@ const StudentDashboard = () => {
                 <div className="badge-pill">Academic Year {settings?.academicYear || '2025/2026'}</div>
                 <h1>{greeting}, {studentInfo.name.split(' ')[0]}</h1>
                 {isPlaced
-                  ? <p>You are placed at <strong>{placementDetails.companyName}</strong>. Keep logging your work!</p>
+                  ? <p>
+                      You are placed at <strong>{placementDetails.companyName}</strong>.
+                      {canSubmitLogs
+                        ? ' Keep logging your work!'
+                        : ' Your logbook will open after supervisor assignment is complete.'}
+                    </p>
                   : <p>You don't have a placement yet. Browse the market to get placed instantly.</p>}
                 <div className="bento-actions">
                   {isPlaced
-                    ? <button className="btn-primary-lite" onClick={() => handleTabChange('daily-log')}>Log Today's Work</button>
+                    ? <button className="btn-primary-lite" onClick={() => handleTabChange('daily-log')}>
+                        {canSubmitLogs ? "Log Today's Work" : 'View Assignment Status'}
+                      </button>
                     : <>
                       <button className="btn-primary-lite" onClick={() => handleTabChange('placements')}>Find a Placement →</button>
                       <button className="btn-outline-lite" style={{ marginLeft: '10px' }} onClick={() => handleTabChange('documents')}>Download Letter →</button>
@@ -361,17 +386,17 @@ const StudentDashboard = () => {
                   <label>Program Completion</label>
                   <span> </span>
                   <span className="percentage-text">
-                    {isPlaced ? Math.round((studentInfo.completedWeeks / studentInfo.totalWeeks) * 100) : 0}%
+                    {isPlaced ? studentInfo.progressPercent : 0}%
                   </span>
                 </div>
                 <div className="linear-progress-track">
                   <div
                     className="linear-progress-bar"
-                    style={{ width: isPlaced ? `${(studentInfo.completedWeeks / studentInfo.totalWeeks) * 100}%` : '0%' }}
+                    style={{ width: isPlaced ? `${studentInfo.progressPercent}%` : '0%' }}
                   />
                 </div>
                 <div className="progress-footer">
-                  <span>{isPlaced ? `Week ${studentInfo.currentWeek || 1}` : 'Not started'}</span>
+                  <span>{isPlaced ? `${formatCompletedWeeks(studentInfo.completedWeekUnits)} Weeks Completed` : 'Not started'}</span>
                   <span> / </span>
                   <span>{studentInfo.totalWeeks} Weeks Total</span>
                 </div>
@@ -389,7 +414,9 @@ const StudentDashboard = () => {
                       <MapPin size={12} style={{ display: 'inline', marginRight: '3px' }} />
                       {placementDetails.location} • {placementDetails.category}
                     </p>
-                    <span className="badge-pill-green" style={{ marginTop: '8px', display: 'inline-block' }}>Active</span>
+                    <span className="badge-pill-green" style={{ marginTop: '8px', display: 'inline-block' }}>
+                      {canSubmitLogs ? 'Active' : 'Awaiting Assignment'}
+                    </span>
                   </>
                 ) : (
                   <div className="status-warning-mini">
@@ -405,9 +432,9 @@ const StudentDashboard = () => {
               {(isPlaced || user?.industrialSupervisor) && (() => {
                 
                 const indSup = user?.industrialSupervisor;
-                const name = indSup?.name || placementDetails?.supervisorName || '';
-                const email = indSup?.email || placementDetails?.supervisorEmail || '';
-                const phone = indSup?.phone || placementDetails?.supervisorPhone || '';
+                const name = indSup?.name || '';
+                const email = indSup?.email || '';
+                const phone = indSup?.phone || '';
                 const org = indSup?.companyOrg || placementDetails?.supervisorOrg || placementDetails?.companyName || '';
                 return (
                   <div className="bento-item info-card">
@@ -428,7 +455,9 @@ const StudentDashboard = () => {
                         )}
                       </>
                     ) : (
-                      <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '6px' }}>No supervisor assigned yet.</p>
+                      <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '6px' }}>
+                        Your company manager has not assigned an industrial supervisor yet.
+                      </p>
                     )}
                   </div>
                 );

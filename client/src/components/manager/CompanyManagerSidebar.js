@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, UserCheck, Users, Settings, LogOut, X, Building2 } from 'lucide-react';
+import { Award, BarChart3, UserCheck, Users, Settings, LogOut, X, Building2 } from 'lucide-react';
 
 const CompanyManagerSidebar = ({ activeTab, setActiveTab, handleLogout, isSidebarOpen, setIsSidebarOpen, companyName }) => {
   const oversightItems = [
@@ -11,6 +11,7 @@ const CompanyManagerSidebar = ({ activeTab, setActiveTab, handleLogout, isSideba
   const supervisionItems = [
     { id: 'approvals',   label: 'Logbook Queue', icon: <UserCheck size={20} /> },
     { id: 'my-interns',  label: 'My Interns',    icon: <Users size={20} /> },
+    { id: 'evaluation',  label: 'Evaluation',    icon: <Award size={20} /> },
   ];
 
   const bottomItems = [

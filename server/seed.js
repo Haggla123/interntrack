@@ -10,10 +10,14 @@ const mongoose  = require('mongoose');
 const connectDB = require('./config/db');
 const User      = require('./models/User');
 const Company   = require('./models/Company');
-const Placement = require('./models/Placement');   // FIX: was PlacementRequest
-const Log       = require('./models/Log');          // FIX: was LogEntry
+const Placement = require('./models/Placement');   
+const Log       = require('./models/Log');         
 const Grade     = require('./models/Grade');
 const Notification = require('./models/Notification');
+const Document  = require('./models/Document');
+const Visit     = require('./models/Visit');
+const Settings  = require('./models/Settings');
+const AuditLog  = require('./models/AuditLog');
 
 const seedPasswords = {
   admin: process.env.SEED_ADMIN_PASSWORD || 'ChangeMeAdmin123!',
@@ -26,13 +30,25 @@ const seedPasswords = {
 const seed = async () => {
   await connectDB();
 
-  console.log('🗑   Clearing existing data...');
-  await User.deleteMany({});
-  await Company.deleteMany({});
-  await Placement.deleteMany({});
-  await Log.deleteMany({});
-  await Grade.deleteMany({});
-  await Notification.deleteMany({});
+  console.log(`🌱  Seeding database: ${mongoose.connection.name}`);
+  console.log('🗑   Clearing existing app data...');
+  const modelsToClear = [
+    AuditLog,
+    Document,
+    Grade,
+    Log,
+    Notification,
+    Placement,
+    Settings,
+    Visit,
+    User,
+    Company,
+  ];
+
+  for (const model of modelsToClear) {
+    await model.deleteMany({});
+    console.log(`   Cleared ${model.collection.name}`);
+  }
 
   // ── Companies ────────────────────────────────────────────────
   console.log('🏢  Seeding companies...');

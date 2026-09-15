@@ -9,6 +9,10 @@ const makeTempPassword = () =>
   'UENR-' + crypto.randomBytes(6).toString('base64url').slice(0, 8);
 
 const sendEmail = async (to, subject, html) => {
+  if (!process.env.BREVO_API_KEY || !process.env.MAIL_ADDRESS) {
+    throw new Error('Brevo email settings are missing. Set BREVO_API_KEY and MAIL_ADDRESS in server/.env.');
+  }
+
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', 'api-key': process.env.BREVO_API_KEY },
@@ -25,24 +29,25 @@ const sendEmail = async (to, subject, html) => {
   }
 };
 
-const sendSupervisorCredentials = async (email, name, tempPassword, company) => {
+const sendManagerCredentials = async (email, name, tempPassword, company) => {
   if (!email) return;
   await sendEmail(
     email,
-    `InternTrack – Your Supervisor Account for ${company.name}`,
+    `InternTrack - Your Company Manager Account for ${company.name}`,
     `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;padding:24px;border-radius:10px;">
       <h2 style="color:#2c5282;text-align:center;">University of Energy and Natural Resources</h2>
-      <p style="text-align:center;color:#64748b;font-size:13px;">InternTrack Portal — Industrial Supervisor Account</p>
+      <p style="text-align:center;color:#64748b;font-size:13px;">InternTrack Portal - Company Manager Account</p>
       <hr style="border:0;border-top:1px solid #eee;" />
-      <h3 style="color:#2c5282;">Hi ${name || 'Supervisor'},</h3>
-      <p>A student has been placed at <strong>${company.name}</strong> and your account has been created.</p>
+      <h3 style="color:#2c5282;">Hi ${name || 'Manager'},</h3>
+      <p>A student placement at <strong>${company.name}</strong> has been approved and your company manager account has been created.</p>
+      <p>Use this account to view interns placed at your company, add industrial supervisors, assign interns to departments, and assign direct supervisors.</p>
       <div style="background:#f7fafc;padding:16px;border-radius:6px;margin:20px 0;border-left:4px solid #3182ce;">
         <p style="margin:5px 0;"><strong>Login Email:</strong> ${email}</p>
         <p style="margin:5px 0;"><strong>Temporary Password:</strong> <span style="color:#e53e3e;font-weight:bold;">${tempPassword}</span></p>
         <p style="margin:5px 0;"><strong>Portal:</strong> <a href="${process.env.CLIENT_URL}/login">${process.env.CLIENT_URL}/login</a></p>
       </div>
       <div style="text-align:center;margin:28px 0;">
-        <a href="${process.env.CLIENT_URL}/login" style="background:#3182ce;color:#fff;padding:12px 30px;text-decoration:none;border-radius:5px;font-weight:bold;display:inline-block;">Login to Supervisor Portal</a>
+        <a href="${process.env.CLIENT_URL}/login" style="background:#3182ce;color:#fff;padding:12px 30px;text-decoration:none;border-radius:5px;font-weight:bold;display:inline-block;">Login to Company Portal</a>
       </div>
       <footer style="margin-top:24px;border-top:1px solid #eee;padding-top:12px;font-size:0.8em;color:#a0aec0;text-align:center;">
         &copy; ${new Date().getFullYear()} UENR InternTrack System | Sunyani, Ghana
@@ -51,22 +56,22 @@ const sendSupervisorCredentials = async (email, name, tempPassword, company) => 
   );
 };
 
-const sendNewInternNotification = async (supervisor, student, company) => {
-  if (!supervisor?.email) return;
+const sendNewInternNotification = async (manager, student, company) => {
+  if (!manager?.email) return;
   await sendEmail(
-    supervisor.email,
-    `InternTrack – New Intern Assigned at ${company.name}`,
+    manager.email,
+    `InternTrack - New Intern Awaiting Assignment at ${company.name}`,
     `<div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #eee;padding:24px;border-radius:10px;">
       <h2 style="color:#2c5282;text-align:center;">University of Energy and Natural Resources</h2>
-      <h3 style="color:#2c5282;">Hi ${supervisor.name || 'Supervisor'},</h3>
-      <p>A new intern has been assigned to your supervision at <strong>${company.name}</strong>.</p>
+      <h3 style="color:#2c5282;">Hi ${manager.name || 'Manager'},</h3>
+      <p>A new intern has been approved for <strong>${company.name}</strong> and is waiting for a host department and industrial supervisor assignment.</p>
       <div style="background:#f7fafc;padding:16px;border-radius:6px;margin:20px 0;border-left:4px solid #38a169;">
         <p style="margin:5px 0;"><strong>Intern Name:</strong> ${student.name || 'N/A'}</p>
         <p style="margin:5px 0;"><strong>Index Number:</strong> ${student.indexNumber || 'N/A'}</p>
         <p style="margin:5px 0;"><strong>Company:</strong> ${company.name}</p>
       </div>
       <div style="text-align:center;margin:28px 0;">
-        <a href="${process.env.CLIENT_URL}/login" style="background:#38a169;color:#fff;padding:12px 30px;text-decoration:none;border-radius:5px;font-weight:bold;display:inline-block;">Go to Supervisor Portal</a>
+        <a href="${process.env.CLIENT_URL}/login" style="background:#38a169;color:#fff;padding:12px 30px;text-decoration:none;border-radius:5px;font-weight:bold;display:inline-block;">Open Company Portal</a>
       </div>
       <footer style="margin-top:24px;border-top:1px solid #eee;padding-top:12px;font-size:0.8em;color:#a0aec0;text-align:center;">
         &copy; ${new Date().getFullYear()} UENR InternTrack System | Sunyani, Ghana
@@ -156,12 +161,12 @@ const approvePlacement = async (req, res) => {
     placement.reviewedBy = req.user._id;
     placement.reviewedAt = new Date();
 
-    const supervisorEmail = (placement.supervisorEmail || '').trim().toLowerCase();
+    const managerEmail = (placement.supervisorEmail || '').trim().toLowerCase();
     let emailSent = false;
     let emailNote = '';
-    let existingManager = supervisorEmail
+    let existingManager = managerEmail
       ? await User.findOne({
-          email: supervisorEmail,
+          email: managerEmail,
           role: { $in: ['company_manager', 'industrial'] },
           isActive: true,
         })
@@ -212,38 +217,52 @@ const approvePlacement = async (req, res) => {
       }
     }
 
-    if (!existingManager && supervisorEmail) {
+    if ((!existingManager || existingManager.role === 'industrial') && company.manager) {
+      existingManager = await User.findOne({
+        _id: company.manager,
+        role: 'company_manager',
+        isActive: true,
+      });
+    }
+
+    if (!existingManager && managerEmail) {
       const tempPassword = makeTempPassword();
       existingManager = await User.create({
-        name: placement.supervisorName || supervisorEmail,
-        email: supervisorEmail,
+        name: placement.supervisorName || managerEmail,
+        email: managerEmail,
         phone: placement.supervisorPhone || '',
         password: tempPassword,
-        role: 'industrial',
+        role: 'company_manager',
         companyOrg: company.name,
         companyId: company._id,
         needsPasswordChange: true,
       });
       company = await Company.findByIdAndUpdate(
         company._id,
-        { $addToSet: { supervisors: existingManager._id } },
+        { $set: { manager: existingManager._id } },
         { new: true }
       );
       try {
-        await sendSupervisorCredentials(supervisorEmail, existingManager.name, tempPassword, company);
+        await sendManagerCredentials(managerEmail, existingManager.name, tempPassword, company);
         emailSent = true;
-        emailNote = `Industrial supervisor account created and credentials sent to ${supervisorEmail}.`;
+        emailNote = `Company manager account created and credentials sent to ${managerEmail}.`;
       } catch (mailErr) {
-        emailNote = `Industrial supervisor account created, but credentials email failed: ${mailErr.message}`;
+        emailNote = `Company manager account created, but credentials email failed: ${mailErr.message}`;
       }
-    } else if (existingManager?.role === 'industrial') {
+    } else if (existingManager?.role === 'company_manager') {
+      if (!company.manager) {
+        company.manager = existingManager._id;
+        await company.save();
+      }
       try {
         await sendNewInternNotification(existingManager, placement.student, company);
         emailSent = true;
-        emailNote = `Industrial supervisor notified at ${existingManager.email}.`;
+        emailNote = `Company manager notified at ${existingManager.email}.`;
       } catch (mailErr) {
-        emailNote = `Placement approved, but supervisor notification failed: ${mailErr.message}`;
+        emailNote = `Placement approved, but company manager notification failed: ${mailErr.message}`;
       }
+    } else if (existingManager?.role === 'industrial') {
+      emailNote = `Placement approved. ${existingManager.email} already belongs to an industrial supervisor, so no company manager account was created. Add a company manager from the admin company record if HR access is needed.`;
     }
 
     if (existingManager && (!existingManager.companyId || existingManager.companyId.toString() !== company._id.toString())) {
@@ -255,14 +274,13 @@ const approvePlacement = async (req, res) => {
     placement.company = company._id;
     await placement.save();
 
-    // Managers handle assignment for large companies; direct industrial contacts
-    // are linked to the student immediately.
+    // Company managers handle department and supervisor assignment after approval.
     await User.findByIdAndUpdate(placement.student._id, {
       companyName:          company.name,
       companyId:            company._id,
       placementStatus:      'Active',
       placementStartDate:   new Date(),
-      industrialSupervisor: existingManager?.role === 'industrial' ? existingManager._id : null,
+      industrialSupervisor: null,
     });
 
     res.status(200).json({

@@ -17,6 +17,7 @@ import CompanyManagerSidebar from '../components/manager/CompanyManagerSidebar';
 import StudentSettings from '../components/student/StudentSettings';
 import PendingApprovals from '../components/industrial/PendingApprovals';
 import MyInterns        from '../components/industrial/MyInterns';
+import InternEvaluation from '../components/industrial/InternEvaluation';
 import TabLoadingState  from '../components/common/TabLoadingState';
 
 const CompanyManagerDashboard = () => {
@@ -47,6 +48,7 @@ const CompanyManagerDashboard = () => {
       case 'supervisors': return <SupervisorsList />;
       case 'approvals':   return <PendingApprovals />;
       case 'my-interns':  return <MyInterns />;
+      case 'evaluation':  return <InternEvaluation />;
       case 'settings':    return <StudentSettings />;
       case 'overview':
       default:            return <ManagerOverview onNavigate={handleTabChange} />;
@@ -218,7 +220,7 @@ const InternAssignments = () => {
   const [saving, setSaving]           = useState(false);
   const [successMsg, setSuccessMsg]   = useState('');
 
-  // Track pending assignment changes (internId -> supervisorId)
+  // Track pending assignment changes (internId -> { supervisorId, companyDepartment })
   const [changes, setChanges] = useState({});
 
   const loadData = useCallback(async () => {
@@ -241,13 +243,35 @@ const InternAssignments = () => {
   useEffect(() => { loadData(); }, [loadData]);
 
   const handleChange = (internId, supervisorId) => {
-    setChanges(prev => ({ ...prev, [internId]: supervisorId }));
+    setChanges(prev => ({
+      ...prev,
+      [internId]: {
+        supervisorId,
+        companyDepartment: prev[internId]?.companyDepartment,
+      },
+    }));
+    setSuccessMsg('');
+  };
+
+  const handleDepartmentChange = (internId, companyDepartment) => {
+    setChanges(prev => ({
+      ...prev,
+      [internId]: {
+        supervisorId: prev[internId]?.supervisorId,
+        companyDepartment,
+      },
+    }));
     setSuccessMsg('');
   };
 
   const getCurrentSupervisor = (intern) => {
-    if (changes[intern._id] !== undefined) return changes[intern._id];
+    if (changes[intern._id]?.supervisorId !== undefined) return changes[intern._id].supervisorId;
     return intern.industrialSupervisor?._id || '';
+  };
+
+  const getCurrentDepartment = (intern) => {
+    if (changes[intern._id]?.companyDepartment !== undefined) return changes[intern._id].companyDepartment;
+    return intern.companyDepartment || '';
   };
 
   const hasChanges = Object.keys(changes).length > 0;
@@ -258,9 +282,10 @@ const InternAssignments = () => {
     setError('');
     setSuccessMsg('');
     try {
-      const assignments = Object.entries(changes).map(([internId, supervisorId]) => ({
+      const assignments = Object.entries(changes).map(([internId, change]) => ({
         internId,
-        supervisorId: supervisorId || null,
+        supervisorId: change.supervisorId !== undefined ? change.supervisorId || null : getCurrentSupervisor(interns.find(i => i._id === internId) || {}),
+        companyDepartment: change.companyDepartment !== undefined ? change.companyDepartment : getCurrentDepartment(interns.find(i => i._id === internId) || {}),
       }));
       await assignInternsToSupervisor(assignments);
       setSuccessMsg(`${assignments.length} assignment${assignments.length > 1 ? 's' : ''} saved successfully!`);
@@ -346,7 +371,8 @@ const InternAssignments = () => {
                 <tr>
                   <th>Intern</th>
                   <th>Index Number</th>
-                  <th>Department</th>
+                  <th>Academic Department</th>
+                  <th>Host Department</th>
                   <th>Assigned Supervisor</th>
                   <th>Status</th>
                 </tr>
@@ -354,6 +380,7 @@ const InternAssignments = () => {
               <tbody>
                 {interns.map(intern => {
                   const currentSup = getCurrentSupervisor(intern);
+                  const currentDepartment = getCurrentDepartment(intern);
                   const isChanged  = changes[intern._id] !== undefined;
                   const isUnassigned = !currentSup;
 
@@ -375,6 +402,15 @@ const InternAssignments = () => {
                       </td>
                       <td>{intern.department || '—'}</td>
                       <td>
+                        <input
+                          type="text"
+                          className="cm-department-input"
+                          placeholder="e.g. IT, Finance"
+                          value={currentDepartment}
+                          onChange={e => handleDepartmentChange(intern._id, e.target.value)}
+                        />
+                      </td>
+                      <td>
                         <div className="cm-select-wrapper">
                           <select
                             value={currentSup}
@@ -384,7 +420,7 @@ const InternAssignments = () => {
                             <option value="">— Unassigned —</option>
                             {supervisors.map(sup => (
                               <option key={sup._id} value={sup._id}>
-                                {sup.name}
+                                {sup.isManager ? `${sup.name} (Me)` : sup.name}
                               </option>
                             ))}
                           </select>
@@ -492,18 +528,24 @@ const SupervisorsList = () => {
                   <AlertCircle size={14} /> {sup.email}
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'13px', color:'#64748b' }}>
-                  <Users size={14} /> Supervisor Role
+                  <Users size={14} /> {sup.isManager ? 'Company Manager / Direct Supervisor' : 'Supervisor Role'}
                 </div>
               </div>
             </div>
             <div style={{ padding:'16px', borderTop:'1px solid var(--gray-100)' }}>
-              <button 
-                className="view-details-btn" 
-                style={{ width:'100%' }}
-                onClick={() => setEditingSupervisor(sup)}
-              >
-                Manage Supervisor
-              </button>
+              {sup.isManager ? (
+                <span className="cm-status-badge cm-status-assigned" style={{ justifyContent:'center', width:'100%' }}>
+                  <UserCheck size={11} /> Available for self-assignment
+                </span>
+              ) : (
+                <button 
+                  className="view-details-btn" 
+                  style={{ width:'100%' }}
+                  onClick={() => setEditingSupervisor(sup)}
+                >
+                  Manage Supervisor
+                </button>
+              )}
             </div>
           </div>
         ))}

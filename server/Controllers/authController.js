@@ -7,6 +7,10 @@ const makeTempPassword = () =>
   'UENR-' + crypto.randomBytes(6).toString('base64url').slice(0, 8);
 
 const sendEmail = async (to, subject, html) => {
+  if (!process.env.BREVO_API_KEY || !process.env.MAIL_ADDRESS) {
+    throw new Error('Brevo email settings are missing. Set BREVO_API_KEY and MAIL_ADDRESS in server/.env.');
+  }
+
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method:  'POST',
     headers: {

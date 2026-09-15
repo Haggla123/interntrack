@@ -109,6 +109,15 @@ const submitGrade = async (req, res) => {
       if (!directLink) {
         return res.status(403).json({ message: 'You can only evaluate students assigned to you.' });
       }
+    } else if (req.user.role === 'company_manager') {
+      if (gradeType !== 'industrial') {
+        return res.status(403).json({ message: 'Company managers can only submit industrial evaluations.' });
+      }
+      const directLink = student.industrialSupervisor &&
+        student.industrialSupervisor.toString() === req.user._id.toString();
+      if (!directLink) {
+        return res.status(403).json({ message: 'Assign this intern to yourself before submitting an industrial evaluation.' });
+      }
     } else if (req.user.role === 'academic') {
       // Academic supervisor may only grade students assigned to them
       const assigned = student.academicSupervisor &&
@@ -192,6 +201,16 @@ const updateGrade = async (req, res) => {
     if (!record) return res.status(404).json({ message: 'Grade record not found.' });
     if (!canAccessStudent(req.user, record.student)) {
       return res.status(403).json({ message: 'Access denied.' });
+    }
+    if (req.user.role === 'company_manager') {
+      if (record.type !== 'industrial') {
+        return res.status(403).json({ message: 'Company managers can only update industrial evaluations.' });
+      }
+      const directLink = record.student?.industrialSupervisor &&
+        record.student.industrialSupervisor.toString() === req.user._id.toString();
+      if (!directLink) {
+        return res.status(403).json({ message: 'Assign this intern to yourself before updating an industrial evaluation.' });
+      }
     }
 
     if (record.type === 'industrial' && criteriaScores !== undefined) {

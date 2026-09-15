@@ -19,7 +19,7 @@ const GROUP_META = {
 };
 const DEFAULT_GROUP_META = { Icon: Pin, check: '#3b82f6', selBg: '#eff6ff', selBorder: '#93c5fd', headerBg: '#dbeafe' };
 
-const LogEntryForm = ({ isLocationVerified, canSubmitLogs = true }) => {
+const LogEntryForm = ({ isLocationVerified, canSubmitLogs = true, onSubmitted }) => {
   const [categories,       setCategories]       = useState([]);
   const [selected,         setSelected]         = useState(new Set());
   const [notes,            setNotes]            = useState('');
@@ -102,6 +102,9 @@ const LogEntryForm = ({ isLocationVerified, canSubmitLogs = true }) => {
       setSelected(new Set());
       setNotes('');
       setAlreadySubmitted(true);
+      if (typeof onSubmitted === 'function') {
+        Promise.resolve(onSubmitted()).catch(() => {});
+      }
       setTimeout(() => setStatus('idle'), 4000);
     } catch (err) {
       setStatus('error');

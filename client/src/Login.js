@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Lock, User, Eye, EyeOff, GraduationCap,
-  Briefcase, ShieldCheck, ChevronRight,
+  ShieldCheck, ChevronRight,
 } from 'lucide-react';
 import './Login.css';
 import ForgotAccessModal    from './pages/ForgotAccessModal';
@@ -12,16 +12,7 @@ import { useAuth }           from './context/AuthContext';
 import { notifyError, notifySuccess } from './utils/toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-const ROLE_LABELS = {
-  student: 'Student',
-  academic: 'Faculty',
-  industrial: 'Industry',
-  company_manager: 'Manager',
-  admin: 'Admin',
-};
-
 const Login = ({ adminOnly = false }) => {
-  const [role,           setRole]           = useState(adminOnly ? 'admin' : 'student');
   const [showPassword,   setShowPassword]   = useState(false);
   const [credentials,    setCredentials]    = useState({ email: '', password: '' });
   const [rememberMe,     setRememberMe]     = useState(false);
@@ -33,16 +24,6 @@ const Login = ({ adminOnly = false }) => {
   const { login: authLogin } = useAuth();
   const navigate             = useNavigate();
   const [searchParams]       = useSearchParams();
-
-  const getPlaceholder = () => {
-    switch (role) {
-      case 'student':    return 'student@uenr.edu.gh';
-      case 'academic':   return 'lecturer@uenr.edu.gh';
-      case 'industrial': return 'supervisor@company.com';
-      case 'admin':      return 'admin@uenr.edu.gh';
-      default:           return 'your@email.com';
-    }
-  };
 
   const roleRoutes = {
     student:         '/student',
@@ -74,7 +55,6 @@ const Login = ({ adminOnly = false }) => {
       const data = await apiLogin({
         email:    credentials.email,
         password: credentials.password,
-        role,
       });
 
       // Pass rememberMe so AuthContext writes to the correct storage atomically
@@ -88,7 +68,7 @@ const Login = ({ adminOnly = false }) => {
       }
 
       const next = searchParams.get('next');
-      const dest = next || roleRoutes[data.user?.role] || roleRoutes[role];
+      const dest = next || roleRoutes[data.user?.role] || '/';
       navigate(dest, { replace: true });
     } catch (err) {
       const message = 'Login failed. Check credentials.';
@@ -116,21 +96,6 @@ const Login = ({ adminOnly = false }) => {
             <p>{adminOnly ? 'Administrator Access' : 'Unified Internship Management System'}</p>
           </Link>
 
-          {!adminOnly && <div className="role-selector-tabs">
-            <button className={role === 'student'    ? 'active' : ''} onClick={() => setRole('student')}>
-              <User size={14} /> Student
-            </button>
-            <button className={role === 'academic'   ? 'active' : ''} onClick={() => setRole('academic')}>
-              <GraduationCap size={14} /> Faculty
-            </button>
-            <button className={role === 'industrial' ? 'active' : ''} onClick={() => setRole('industrial')}>
-              <Briefcase size={14} /> Industry
-            </button>
-            <button className={role === 'company_manager' ? 'active' : ''} onClick={() => setRole('company_manager')}>
-              <ShieldCheck size={14} /> Manager
-            </button>
-          </div>}
-
           <form onSubmit={handleSubmit} className="login-form-fields" noValidate>
             <div className="form-group-custom">
               <label>Email Address</label>
@@ -138,7 +103,7 @@ const Login = ({ adminOnly = false }) => {
                 <User size={18} className="input-icon" />
                 <input
                   type="email"
-                  placeholder={getPlaceholder()}
+                  placeholder="email, index number, or staff ID"
                   value={credentials.email}
                   onChange={e => setCredentials({ ...credentials, email: e.target.value })}
                   required
@@ -188,7 +153,7 @@ const Login = ({ adminOnly = false }) => {
             <button type="submit" className="btn-login-submit" disabled={loading}>
               {loading
                 ? 'Signing in…'
-                : `Sign In to ${ROLE_LABELS[role] || 'Portal'} Portal`}
+                : 'Sign In'}
               <ChevronRight size={18} />
             </button>
 
@@ -202,7 +167,6 @@ const Login = ({ adminOnly = false }) => {
           <ForgotAccessModal
             isOpen={isForgotOpen}
             onClose={() => setIsForgotOpen(false)}
-            currentRole={role}
           />
 
           <ChangePasswordModal
@@ -213,7 +177,7 @@ const Login = ({ adminOnly = false }) => {
                 localStorage.getItem('user') || sessionStorage.getItem('user') || '{}'
               );
               const next = searchParams.get('next');
-              const dest = next || roleRoutes[stored?.role] || roleRoutes[role];
+              const dest = next || roleRoutes[stored?.role] || '/';
               navigate(dest, { replace: true });
             }}
           />

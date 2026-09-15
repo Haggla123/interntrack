@@ -113,7 +113,7 @@ const AttachmentLetters = () => {
     <div className="bento-container fade-in">
       <div className="bento-item status-box warning-alert">
         <div className="pulse-header"><label>Self-Placement Instructions</label><Info size={16} /></div>
-        <p>Download the official letter below. Once a company accepts you, use <strong>"Report Placement"</strong> to notify Admin and unlock your logbook.</p>
+        <p>Download the official letter below. Once a company accepts you, use <strong>"Report Placement"</strong> to notify Admin. The company contact should be the HR officer or person who can assign interns internally.</p>
       </div>
 
       {/* Official Letters */}
@@ -184,7 +184,7 @@ const AttachmentLetters = () => {
           <CheckCircle2 size={32} color="#10b981" style={{ marginBottom:'10px' }} />
           <h4 style={{ color:'#059669' }}>Placement Confirmed</h4>
           <p className="sub-text" style={{ marginTop:'6px' }}>
-            Your placement has been recorded. Your logbook is now active.
+            Your placement has been recorded. Your logbook opens after your academic supervisor and industrial supervisor are assigned.
           </p>
         </div>
       ) : (
@@ -192,7 +192,7 @@ const AttachmentLetters = () => {
           <div className="bento-item info-card">
             <div className="doc-icon-circle"><Send size={28} /></div>
             <h4>Report Your Placement</h4>
-            <p className="sub-text">Once a company accepts you, notify the admin to unlock your logbook.</p>
+            <p className="sub-text">Once a company accepts you, submit the company contact for admin verification.</p>
             <button className="btn-outline-lite" onClick={() => setShowForm(true)}>
               <Send size={16} /> Report My Placement
             </button>
@@ -223,15 +223,15 @@ const AttachmentLetters = () => {
                     <input type="text" placeholder="e.g. GRIDCo" className="corporate-input-sm" value={form.companyName} onChange={e => set('companyName', e.target.value)} required />
                   </div>
                   <div className="input-group">
-                    <label>Supervisor Name</label>
-                    <input type="text" placeholder="e.g. Mr. Kofi Mensah" className="corporate-input-sm" value={form.supervisorName} onChange={e => set('supervisorName', e.target.value)} />
+                    <label>Company Contact Name</label>
+                    <input type="text" placeholder="e.g. HR Officer or Manager" className="corporate-input-sm" value={form.supervisorName} onChange={e => set('supervisorName', e.target.value)} />
                   </div>
                   <div className="input-group">
-                    <label>Supervisor Email *</label>
-                    <input type="email" placeholder="manager@company.com" className="corporate-input-sm" value={form.supervisorEmail} onChange={e => set('supervisorEmail', e.target.value)} required />
+                    <label>Company Contact Email *</label>
+                    <input type="email" placeholder="hr@company.com" className="corporate-input-sm" value={form.supervisorEmail} onChange={e => set('supervisorEmail', e.target.value)} required />
                   </div>
                   <div className="input-group">
-                    <label>Supervisor Phone *</label>
+                    <label>Company Contact Phone *</label>
                     <input type="tel" placeholder="024XXXXXXX" className="corporate-input-sm" value={form.supervisorPhone} onChange={e => set('supervisorPhone', e.target.value)} required />
                   </div>
                 </div>

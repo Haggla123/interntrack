@@ -50,7 +50,7 @@ const getInterns = async (req, res) => {
       placementStatus: 'Active',
       isActive: true,
     })
-      .select('name email indexNumber department industrialSupervisor companyName')
+      .select('name email indexNumber department companyDepartment industrialSupervisor companyName')
       .populate('industrialSupervisor', 'name email phone companyOrg');
 
     res.status(200).json({ success: true, data: interns });
@@ -73,8 +73,13 @@ const getSupervisors = async (req, res) => {
       _id: { $in: company.supervisors },
       isActive: true,
     }).select('name email phone companyOrg');
+    const manager = await User.findById(req.user._id).select('name email phone companyOrg');
+    const data = [
+      ...(manager ? [{ ...manager.toObject(), isManager: true }] : []),
+      ...supervisors.map(s => ({ ...s.toObject(), isManager: false })),
+    ];
 
-    res.status(200).json({ success: true, data: supervisors });
+    res.status(200).json({ success: true, data });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -82,7 +87,7 @@ const getSupervisors = async (req, res) => {
 
 // ── PUT /api/company-manager/assign ──────────────────────────────
 // Assign intern(s) to a supervisor
-// Body: { assignments: [{ internId, supervisorId }] }
+// Body: { assignments: [{ internId, supervisorId, companyDepartment }] }
 const assignInterns = async (req, res) => {
   try {
     const { assignments } = req.body;
@@ -96,14 +101,23 @@ const assignInterns = async (req, res) => {
     }
 
     // Validate all supervisors belong to this company
-    const validSupIds = company.supervisors.map(s => s.toString());
+    const validSupIds = [
+      req.user._id.toString(),
+      ...company.supervisors.map(s => s.toString()),
+    ];
 
     const results = [];
-    for (const { internId, supervisorId } of assignments) {
+    for (const { internId, supervisorId, companyDepartment } of assignments) {
       // Allow null/empty supervisorId to unassign
       if (supervisorId && !validSupIds.includes(supervisorId)) {
         results.push({ internId, error: 'Supervisor not part of this company' });
         continue;
+      }
+      const updates = {
+        industrialSupervisor: supervisorId || null,
+      };
+      if (companyDepartment !== undefined) {
+        updates.companyDepartment = String(companyDepartment || '').trim();
       }
 
       const intern = await User.findOneAndUpdate(
@@ -113,9 +127,9 @@ const assignInterns = async (req, res) => {
           companyId: company._id,
           placementStatus: 'Active',
         },
-        { industrialSupervisor: supervisorId || null },
+        updates,
         { new: true }
-      ).select('name indexNumber industrialSupervisor');
+      ).select('name indexNumber industrialSupervisor companyDepartment');
 
       if (!intern) {
         results.push({ internId, error: 'Intern not found at this company' });
